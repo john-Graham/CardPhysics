@@ -45,14 +45,8 @@ public struct CardPhysicsScene: View {
             coordinator?.dealCardsAction = { [self] in
                 await self.dealCards()
             }
-            coordinator?.playCardAction = { [self] index in
-                await self.playCard(index: index)
-            }
             coordinator?.pickUpCardAction = { [self] index in
                 await self.pickUpCard(index: index)
-            }
-            coordinator?.slideCardsAction = { [self] in
-                await self.slideCards()
             }
             coordinator?.resetCardsAction = { [self] in
                 self.resetCards()
@@ -528,27 +522,6 @@ public struct CardPhysicsScene: View {
         card.components[PhysicsMotionComponent.self] = motion
     }
 
-    public func playCard(index: Int) async {
-        guard index < cards.count else { return }
-        let card = cards[index]
-
-        let centerPosition = SIMD3<Float>(0, 0.002, 0)
-
-        await withCheckedContinuation { continuation in
-            card.move(
-                to: Transform(
-                    scale: card.scale,
-                    rotation: card.orientation,
-                    translation: centerPosition
-                ),
-                relativeTo: nil,
-                duration: settings.playDuration,
-                timingFunction: .easeInOut
-            )
-            continuation.resume()
-        }
-    }
-
     public func pickUpCard(index: Int) async {
         guard index < cards.count else { return }
         let card = cards[index]
@@ -569,28 +542,6 @@ public struct CardPhysicsScene: View {
                 timingFunction: .easeOut
             )
             continuation.resume()
-        }
-    }
-
-    public func slideCards() async {
-        // Slide all cards to the side
-        for card in cards {
-            var newPos = card.position
-            newPos.x += 0.3
-
-            await withCheckedContinuation { continuation in
-                card.move(
-                    to: Transform(
-                        scale: card.scale,
-                        rotation: card.orientation,
-                        translation: newPos
-                    ),
-                    relativeTo: nil,
-                    duration: settings.slideDuration,
-                    timingFunction: .easeInOut
-                )
-                continuation.resume()
-            }
         }
     }
 

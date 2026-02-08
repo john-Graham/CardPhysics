@@ -4,9 +4,7 @@ import SwiftUI
 @Observable
 public class SceneCoordinator {
     public var dealCardsAction: (() async -> Void)?
-    public var playCardAction: ((Int) async -> Void)?
     public var pickUpCardAction: ((Int) async -> Void)?
-    public var slideCardsAction: (() async -> Void)?
     public var resetCardsAction: (() -> Void)?
 
     public init() {}
@@ -56,16 +54,8 @@ public struct CardPhysicsView: View {
                             await triggerAnimation(.deal)
                         }
 
-                        AnimationButton(title: "Play", icon: "play.circle") {
-                            await triggerAnimation(.play)
-                        }
-
                         AnimationButton(title: "Pick Up", icon: "hand.raised") {
                             await triggerAnimation(.pickUp)
-                        }
-
-                        AnimationButton(title: "Slide", icon: "arrow.right") {
-                            await triggerAnimation(.slide)
                         }
 
                         AnimationButton(title: "Reset", icon: "arrow.counterclockwise", color: .red) {
@@ -120,19 +110,15 @@ public struct CardPhysicsView: View {
     }
 
     enum AnimationType {
-        case deal, play, pickUp, slide
+        case deal, pickUp
     }
 
     private func triggerAnimation(_ type: AnimationType) async {
         switch type {
         case .deal:
             await coordinator.dealCardsAction?()
-        case .play:
-            await coordinator.playCardAction?(0)
         case .pickUp:
             await coordinator.pickUpCardAction?(0)
-        case .slide:
-            await coordinator.slideCardsAction?()
         }
     }
 
@@ -381,23 +367,9 @@ struct SettingsPanel: View {
                     )
 
                     SliderSetting(
-                        label: "Play Duration",
-                        value: $settings.playDuration,
-                        range: 0.1...2.0,
-                        unit: "s"
-                    )
-
-                    SliderSetting(
                         label: "Pick Up Duration",
                         value: $settings.pickUpDuration,
                         range: 0.1...1.5,
-                        unit: "s"
-                    )
-
-                    SliderSetting(
-                        label: "Slide Duration",
-                        value: $settings.slideDuration,
-                        range: 0.1...3.0,
                         unit: "s"
                     )
 
@@ -414,16 +386,6 @@ struct SettingsPanel: View {
                             set: { settings.dealArcHeight = Float($0) }
                         ),
                         range: 0.0...0.4,
-                        unit: "m"
-                    )
-
-                    SliderSetting(
-                        label: "Play Arc",
-                        value: Binding(
-                            get: { Double(settings.playArcHeight) },
-                            set: { settings.playArcHeight = Float($0) }
-                        ),
-                        range: 0.0...0.3,
                         unit: "m"
                     )
 
@@ -447,13 +409,6 @@ struct SettingsPanel: View {
                         label: "Deal Rotation",
                         value: $settings.dealRotation,
                         range: 0...90,
-                        unit: "°"
-                    )
-
-                    SliderSetting(
-                        label: "Play Rotation",
-                        value: $settings.playRotation,
-                        range: 0...45,
                         unit: "°"
                     )
 
