@@ -1,0 +1,52 @@
+# CardPhysics
+
+## Project Overview
+iOS sandbox app for developing and tuning realistic card animations and physics using RealityKit. All animation code is isolated from game logic for easy extraction into production card-game apps.
+
+## Directory Layout
+```
+CardPhysics/
+├── CardPhysicsPackage/          # Swift Package with all core logic (CardPhysicsKit library)
+│   ├── Package.swift            # swift-tools-version: 6.0, iOS 18+
+│   ├── Sources/CardPhysicsKit/  # 3D scene, physics, entities, textures, UI
+│   └── Tests/CardPhysicsKitTests/
+├── CardPhysicsApp/              # Xcode project wrapper (thin shell around CardPhysicsKit)
+│   ├── CardPhysicsApp.xcodeproj
+│   ├── CardPhysicsApp/          # Main app target (entry point + ContentView)
+│   ├── CardPhysicsAppTests/     # Unit tests
+│   ├── CardPhysicsAppUITests/   # UI automation tests
+│   └── card-physics.rtf         # Reference doc on RealityKit card physics theory
+├── CardPhysics/                 # Alternate @main entry using SwiftUI App protocol
+├── Sources/CardPhysicsApp/      # SPM executable target (@main stub, placeholder only)
+├── Config/                      # Reserved for configuration files (currently empty)
+├── Package.swift                # Root SPM manifest (swift-tools-version: 6.2)
+├── create_project.sh            # One-time script that scaffolded the Xcode project
+└── README.md
+```
+
+## Build and Run
+1. Open `CardPhysicsApp/CardPhysicsApp.xcodeproj` in Xcode 16.3+
+2. Select an iOS 18+ simulator or device
+3. Build and run the CardPhysicsApp scheme
+
+The root `Package.swift` defines an SPM executable target (`Sources/CardPhysicsApp/`) but the real app is built through the Xcode project, which depends on `CardPhysicsPackage/` as a local Swift package.
+
+## Key Conventions
+- **Swift 6.1+** with StrictConcurrency and ExistentialAny enabled in the package
+- **iOS 18.0+** minimum deployment target
+- **SwiftUI + RealityKit** for all UI and 3D rendering
+- **Apple Testing framework** for unit tests
+- App target is intentionally minimal -- all logic lives in CardPhysicsKit
+- Landscape-only orientation, locked at app launch
+
+## Architecture
+- `CardPhysicsKit` is the framework with all substance: 3D scene management, physics simulation, procedural texture generation, card entities, curved mesh generation, animation triggers, and the interactive SwiftUI control panel
+- `CardPhysicsApp` is a thin shell: `@main` entry point, orientation lock, `ContentView` wrapping `CardPhysicsView`
+- `CardPhysics/CardPhysicsApp.swift` is a separate `@main` entry using the SwiftUI `App` protocol that imports CardPhysicsKit directly
+
+## Open GitHub Issues (planned changes)
+- #1 Deal button: add long-press menu with multiple deal modes
+- #2 Remove Play Card button
+- #3 Pick Up button: long-press menu to gather and pick up cards by corner
+- #4 Remove Slide button
+- #5 Settings panel: reorganize sliders grouped by animation type

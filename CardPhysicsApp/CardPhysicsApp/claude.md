@@ -1,62 +1,25 @@
 # CardPhysicsApp/CardPhysicsApp
 
-## Overview
-This folder contains the main application target files for the CardPhysicsApp iOS application.
+Main app target source files.
 
 ## Files
 
 ### CardPhysicsAppApp.swift
-**Purpose**: App entry point and configuration
-
-**Key Responsibilities**:
-- Defines the `@main` app structure
-- Locks device orientation to landscape right on app launch
-- Creates the root WindowGroup with ContentView
-
-**Implementation Details**:
-```swift
-@main
-struct CardPhysicsAppApp: App
-```
-- Uses `UIDevice.current.setValue()` to force landscape orientation
-- This ensures optimal viewing of the 3D card table
+- `@main` entry point
+- Creates `WindowGroup` with `ContentView`
+- Locks orientation to landscape right via `UIDevice.current.setValue()`
 
 ### ContentView.swift
-**Purpose**: Root view of the application
-
-**Key Responsibilities**:
-- Wraps CardPhysicsView from CardPhysicsKit
-- Hides the status bar for immersive experience
-
-**Dependencies**:
-- SwiftUI
-- CardPhysicsKit
-
-**Implementation Details**:
-- Minimal wrapper that instantiates CardPhysicsView
-- `.statusBarHidden()` modifier for full-screen 3D experience
-- Includes #Preview for SwiftUI canvas
+- Root view wrapping `CardPhysicsView` from CardPhysicsKit
+- Hides status bar with `.statusBarHidden()`
+- Includes `#Preview` macro
 
 ### Assets.xcassets
-**Purpose**: Asset catalog
+- App icons, launch screen assets, color assets
 
-**Contents**:
-- App icons
-- Launch screen assets
-- Color assets
-
-## Architecture Notes
-This folder follows the principle of separation of concerns:
-- The app target is kept minimal
-- All business logic, 3D rendering, and physics are delegated to CardPhysicsKit
-- This makes the core functionality reusable across different app targets
+## Architecture
+This target is intentionally minimal. All 3D rendering, physics simulation, and card logic is delegated to CardPhysicsKit. Keep this layer thin -- extend `CardPhysicsView` in CardPhysicsKit rather than adding complexity here.
 
 ## Dependencies
-- CardPhysicsKit (imports in ContentView.swift)
-- SwiftUI framework
-- UIKit (for orientation locking)
-
-## Modification Guidelines
-- Keep this layer thin - business logic belongs in CardPhysicsKit
-- Maintain the landscape orientation lock for optimal UX
-- Don't add complex view logic here - extend CardPhysicsView instead
+- SwiftUI, UIKit (orientation locking)
+- CardPhysicsKit (`CardPhysicsView`)

@@ -1,131 +1,101 @@
 # CardPhysicsApp
 
 ## Overview
-CardPhysicsApp is an iOS application that demonstrates realistic 3D card physics and animations using RealityKit. It serves as a demonstration app for the CardPhysicsKit framework.
+CardPhysicsApp is an iOS application that demonstrates realistic 3D card physics and animations using RealityKit. It serves as a thin wrapper around the CardPhysicsKit framework.
 
 ## Project Structure
-- `CardPhysicsApp/` - Main app target with UI and entry point
-- `CardPhysicsAppTests/` - Unit tests
-- `CardPhysicsAppUITests/` - UI automation tests
-- `Products/` - Build artifacts
+- `CardPhysicsApp/` - Main app target (entry point + root view)
+- `CardPhysicsAppTests/` - Unit tests (Apple Testing framework)
+- `CardPhysicsAppUITests/` - UI automation tests (XCUITest)
+- `card-physics.rtf` - Reference document on spatial card physics theory
 
 ## Dependencies
 - iOS 18.0+
-- CardPhysicsKit (local Swift package)
-- SwiftUI
-- RealityKit
+- CardPhysicsKit (local Swift package at ../CardPhysicsPackage)
+- SwiftUI, RealityKit, UIKit
 
 ## Architecture
-The app follows a minimal architecture pattern:
-- App entry point locks to landscape orientation
-- ContentView acts as a thin wrapper around CardPhysicsView from CardPhysicsKit
-- All 3D rendering, physics, and animation logic is contained in CardPhysicsKit
+- App entry point locks orientation to landscape right
+- ContentView wraps `CardPhysicsView` from CardPhysicsKit with hidden status bar
+- All 3D rendering, physics, and animation logic lives in CardPhysicsKit
 
-## Key Features
-- 3D card rendering with realistic physics
-- Interactive camera controls
-- Physics simulation with gravity
-- Card dealing, playing, picking up, and sliding animations
-- Configurable physics settings
-- Procedural PBR materials for table and cards
-
-## Configuration
-- Target: iOS
-- Minimum iOS Version: 18.0
-- Orientation: Landscape only (locked at app launch)
-
-## Build Notes
-- Clean build folder if camera position changes don't appear
-- The app depends on the CardPhysicsPackage being built first
+## Build
+- Scheme: CardPhysicsApp
+- The app depends on CardPhysicsPackage being built first
+- Clean build folder if camera position changes don't take effect
 - Resources (HDRI, textures) are bundled in CardPhysicsKit
 
 ## Camera Configuration
-Default camera position: `[0, 0.55, 0.41]`
-- X: 0 (centered)
-- Y: 0.55 (elevated view)
-- Z: 0.41 (closer to table, moved from original 0.65)
-
-Camera target: `[0, 0, 0]` (center of table)
+- Default position: `[0, 0.55, 0.41]` (centered, elevated, close to table)
+- Target: `[0, 0, 0]` (center of table)
 
 ## Card Dealing Physics
 
 ### Deck Configuration
-- **12 cards total** - 3 rounds to each of 4 sides
+- **12 cards total** -- 3 rounds to each of 4 sides
 - **Deck position**: Bottom of table (side 1) at z=0.41, x=0
 - **Initial height**: 5x deck thickness (82.5mm above table)
   - Stack offset: 1.5mm between cards
-  - Base height: max(15mm, deck_thickness × 5)
-- **Dealing order**: Top to bottom (cards 11→0)
-- **Deal pattern**: Side 2 (left) → 3 (top) → 4 (right) → 1 (bottom), repeating
+  - Base height: max(15mm, deck_thickness x 5)
+- **Dealing order**: Top to bottom (cards 11 to 0)
+- **Deal pattern**: Side 2 (left), 3 (top), 4 (right), 1 (bottom), repeating
 
 ### Distance-Based Velocity
 Cards are thrown with varying speeds based on target distance:
 
-**Side 1 (Bottom)** - Near deck, minimal slide:
-- Horizontal: 0.4 m/s
-- Upward: 0.15 m/s
-- Spin intensity: 0.5
-
-**Side 2 (Left)** - Medium distance:
-- Horizontal: 1.1 m/s
-- Upward: 0.4 m/s
-- Spin intensity: 1.0
-
-**Side 3 (Top)** - Farthest distance:
-- Horizontal: 1.4 m/s (strongest throw)
-- Upward: 0.5 m/s (highest arc)
-- Spin intensity: 1.5 (most rotation)
-
-**Side 4 (Right)** - Medium distance:
-- Horizontal: 1.1 m/s
-- Upward: 0.4 m/s
-- Spin intensity: 1.0
+| Side | Horizontal | Upward | Spin Intensity |
+|------|-----------|--------|----------------|
+| 1 (Bottom, near deck) | 0.4 m/s | 0.15 m/s | 0.5 |
+| 2 (Left, medium) | 1.1 m/s | 0.4 m/s | 1.0 |
+| 3 (Top, farthest) | 1.4 m/s | 0.5 m/s | 1.5 |
+| 4 (Right, medium) | 1.1 m/s | 0.4 m/s | 1.0 |
 
 ### Rotation During Flight
-Cards tumble realistically with random variation:
-- **Y-axis spin**: 1.5–2.5 rad/s (scaled by spin intensity)
-- **X-axis tumble**: ±0.5 rad/s (forward/backward flip)
-- **Z-axis tumble**: ±0.5 rad/s (side-to-side roll)
+- **Y-axis spin**: 1.5-2.5 rad/s (scaled by spin intensity)
+- **X-axis tumble**: +/-0.5 rad/s (forward/backward flip)
+- **Z-axis tumble**: +/-0.5 rad/s (side-to-side roll)
 - Direction-dependent spin (left/bottom counter-clockwise, top/right clockwise)
 
 ### Target Positioning & Stacking
-Cards aim for the center of each side with tight clustering:
-- **Random variation**: ±15mm (reduced from 30mm for better stacking)
-- **Target positions**:
-  - Side 1: (0, 0.35z)
-  - Side 2: (-0.55x, 0)
-  - Side 3: (0, -0.35z)
-  - Side 4: (0.55x, 0)
+Cards aim for center of each side with tight clustering:
+- **Random variation**: +/-15mm
+- **Target positions**: Side 1: (0, 0.35z), Side 2: (-0.55x, 0), Side 3: (0, -0.35z), Side 4: (0.55x, 0)
 
 ### Card Physics Properties (CardEntity3D)
-Optimized for realistic sliding and stacking:
+| Property | Value | Notes |
+|----------|-------|-------|
+| Static friction | 0.25 | Reduced from 0.4 for sliding |
+| Dynamic friction | 0.2 | Reduced from 0.3 |
+| Restitution | 0.05 | Minimal bounce for stacking |
+| Linear damping | 0.1 | Was 0.0, helps settling |
+| Angular damping | 0.3 | Was 0.0, helps settling |
+| CCD | Enabled | Prevents tunneling through thin surfaces |
+| Mode | Kinematic -> Dynamic on deal | |
 
-**Friction** (reduced for sliding):
-- Static friction: 0.25 (down from 0.4)
-- Dynamic friction: 0.2 (down from 0.3)
+### Physics Behavior Summary
+1. Varied throw strength -- cards reach different distances appropriately
+2. Visible rotation -- cards tumble and spin during flight
+3. Minimal bounce -- low restitution prevents excessive bouncing
+4. Easy sliding -- low friction allows cards to slide on each other
+5. Quick settling -- light damping helps cards settle into stable piles
+6. Natural stacking -- tight targeting + low friction = cards pile up
+7. Realistic arcs -- upward velocity creates parabolic trajectories
+8. Deck elevation -- high initial position makes dealing visible
 
-**Bounce** (minimal for stacking):
-- Restitution: 0.05 (down from 0.1)
-
-**Damping** (for settling):
-- Linear damping: 0.1 (was 0.0)
-- Angular damping: 0.3 (was 0.0)
-
-**Other**:
-- Continuous collision detection: Enabled
-- Mode: Kinematic → Dynamic on deal
-
-### Physics Behavior
-The combination of settings creates realistic card dealing:
-1. **Varied throw strength** - Cards reach different distances appropriately
-2. **Visible rotation** - Cards tumble and spin during flight
-3. **Minimal bounce** - Low restitution prevents excessive bouncing
-4. **Easy sliding** - Low friction allows cards to slide on each other
-5. **Quick settling** - Light damping helps cards settle into stable piles
-6. **Natural stacking** - Tight targeting + low friction = cards pile on top of each other
-7. **Realistic arcs** - Upward velocity creates parabolic trajectories
-8. **Deck elevation** - High initial position makes dealing motion clearly visible
-
-### Delay Between Cards
+### Timing
 - 0.3 seconds between each card
 - Total dealing time: 3.6 seconds (12 cards)
+
+## Reference: RealityKit Card Physics Theory
+The file `card-physics.rtf` contains an extensive reference on:
+- Physics body modes (static/kinematic/dynamic) and state transitions
+- Continuous Collision Detection (CCD) for thin objects
+- Solving tiny object scale limitations with physicsOrigin scaling (0.1x)
+- Linear/angular damping optimization (set to 0.0 for natural slide)
+- Friction modeling: static vs dynamic friction coefficients for card-on-table and card-on-card
+- Restitution tuning (0.1-0.2 for inelastic card collisions)
+- Linear and angular impulse calculations for throw mechanics
+- Solver iteration tuning (12-16 positionIterations for stack stability)
+- CollisionGroup/CollisionFilter for performance optimization
+- TabletopKit as alternative stacking solution
+- Performance optimization for 52-card scenes
