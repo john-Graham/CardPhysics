@@ -367,12 +367,21 @@ public struct CardPhysicsScene: View {
         }
 
         for (index, card) in sampleCards.enumerated() {
+            let tapEnabled = settings.enableCardTapGesture
             let cardEntity = CardEntity3D.makeCard(
                 card,
                 faceUp: false,
-                enableTap: false,
+                enableTap: tapEnabled,
                 curvature: 0.0
             )
+
+            // When tap gesture is enabled, add GestureComponent for tap-to-flip
+            if tapEnabled {
+                let tapGesture = TapGesture().onEnded { _ in
+                    flipCard(cardEntity)
+                }
+                cardEntity.components.set(GestureComponent(tapGesture))
+            }
 
             let stackOffset: Float = 0.0015
             let deckThickness: Float = Float(sampleCards.count - 1) * stackOffset
@@ -618,6 +627,57 @@ public struct CardPhysicsScene: View {
             card.removeFromParent()
         }
         cards.removeAll()
+    }
+
+    /// Flips a card 180 degrees around the X axis with a short animation.
+    /// Only flips cards that are in dynamic or kinematic mode (not during active move animations).
+    private func flipCard(_ card: Entity) {
+        guard let physicsBody = card.components[PhysicsBodyComponent.self],
+              physicsBody.mode == .dynamic || physicsBody.mode == .kinematic else {
+            return
+        }
+
+        // Determine current face orientation: face-up has ~pi rotation around X
+        let currentRotation = card.orientation
+        // Check if the card's local Y axis is pointing down (face-up) or up (face-down)
+        let localUp = currentRotation.act(SIMD3<Float>(0, 1, 0))
+        let isFaceUp = localUp.y < 0
+
+        // Target orientation: toggle between face-up (pi around X) and face-down (identity)
+        let targetOrientation = isFaceUp
+            ? simd_quatf(angle: 0, axis: [1, 0, 0])  // face-down (identity)
+            : simd_quatf(angle: .pi, axis: [1, 0, 0]) // face-up
+
+        // Temporarily switch to kinematic for the flip animation
+        let previousMode = physicsBody.mode
+        if previousMode == .dynamic {
+            var body = physicsBody
+            body.mode = .kinematic
+            card.components[PhysicsBodyComponent.self] = body
+            card.components[PhysicsMotionComponent.self] = nil
+        }
+
+        card.move(
+            to: Transform(
+                scale: card.scale,
+                rotation: targetOrientation,
+                translation: card.position
+            ),
+            relativeTo: nil,
+            duration: 0.25,
+            timingFunction: .easeInOut
+        )
+
+        // Restore dynamic mode after flip completes
+        if previousMode == .dynamic {
+            Task {
+                try? await Task.sleep(for: .seconds(0.25))
+                if var body = card.components[PhysicsBodyComponent.self] {
+                    body.mode = .dynamic
+                    card.components[PhysicsBodyComponent.self] = body
+                }
+            }
+        }
     }
 
     public func resetCards() {

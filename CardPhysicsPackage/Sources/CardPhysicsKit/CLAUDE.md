@@ -15,13 +15,14 @@ Note: This is a Euchre deck (9 through Ace only, no 2-8).
 ### PhysicsSettings.swift -- Animation Configuration
 `@Observable @MainActor public final class PhysicsSettings: Sendable`
 
-Configurable parameters in three categories:
-- **Durations** (seconds): `dealDuration`(0.5), `playDuration`(0.4), `pickUpDuration`(0.3), `slideDuration`(0.6)
-- **Arc heights** (meters): `dealArcHeight`(0.15), `playArcHeight`(0.12), `pickUpArcHeight`(0.08)
-- **Rotations** (degrees): `dealRotation`(15), `playRotation`(10), `pickUpRotation`(5)
+Configurable parameters in four categories:
+- **Durations** (seconds): `dealDuration`(0.5), `pickUpDuration`(0.3)
+- **Arc heights** (meters): `dealArcHeight`(0.15), `pickUpArcHeight`(0.08)
+- **Rotations** (degrees): `dealRotation`(15), `pickUpRotation`(5)
 - **Visual**: `cardCurvature`(0.002) -- 0.0=flat, higher=more curve
+- **Interaction**: `enableCardTapGesture`(false) -- when true, cards get `GestureComponent` with tap-to-flip
 
-Three presets: `applyRealisticPreset()`, `applySlowMotionPreset()`, `applyFastPreset()`.
+Three presets: `applyRealisticPreset()`, `applySlowMotionPreset()`, `applyFastPreset()`. Presets reset animation/appearance values but do not touch the `enableCardTapGesture` interaction flag.
 
 ### CardEntity3D.swift -- 3D Card Factory
 `@MainActor enum CardEntity3D` (internal, not public)
@@ -62,15 +63,17 @@ The main 3D scene. Uses `RealityView` to set up and manage the physics world.
 3. Table: wood base (1.4m x 1.0m), 4 rails (0.07m thick, static physics), green felt surface (static physics, friction 0.5/0.4)
 4. Lighting: HDRI `room_bg` from `Bundle.module`, fallback 3-point lighting (main spot 400, fill point 150, rim spot 300)
 5. Deck: 12 cards (Euchre deck sample) stacked face-down at position [0, y, 0.41]
-6. Coordinator action wiring (dealCardsAction, playCardAction, pickUpCardAction, slideCardsAction, resetCardsAction)
+6. Coordinator action wiring (dealCardsAction, pickUpCardAction, resetCardsAction)
+7. When `settings.enableCardTapGesture` is true, each card gets `InputTargetComponent` + `GestureComponent(TapGesture)` for tap-to-flip
 
 **Also defines `SceneCoordinator`**: `@MainActor @Observable public class` with optional async action closures that bridge SwiftUI button presses to scene methods.
 
 **Animation methods**:
-- `dealCards()` -- iterates cards top-to-bottom, delays 0.3s each, flips face-up, switches to dynamic physics, tosses toward sides 2/3/4/1 with velocity/spin based on distance
-- `playCard(index:)` -- moves card to center [0, 0.002, 0] using `entity.move()`
-- `pickUpCard(index:)` -- lifts card 0.05m upward
-- `slideCards()` -- shifts all cards +0.3m on X axis
+- `dealCards(mode:)` -- removes existing cards, recreates deck with correct count, deals via standard or Euchre pattern
+- `dealCardsStandard()` -- deals one card at a time cycling sides 2/3/4/1
+- `dealCardsEuchre()` -- Euchre dealing in bundles of 2 and 3 across two rounds
+- `gatherAndPickUp(corner:)` -- 3-phase animation: gather all cards to corner, pause, lift and remove
+- `flipCard(_:)` -- (iOS 26 GestureComponent) flips a card 180 degrees around X axis with 0.25s animation; detects current face via quaternion, temporarily switches to kinematic, restores dynamic after flip
 - `resetCards()` -- removes all cards, recreates deck
 
 **Deal pattern**: cycles sides [2, 3, 4, 1] (left, top, right, bottom). Side-dependent speed: side 1 gentle (0.4 horizontal, 0.15 up), sides 2/4 moderate (1.1, 0.4), side 3 strongest (1.4, 0.5).
@@ -84,16 +87,18 @@ Top-level view that wraps `CardPhysicsScene` with UI controls.
 
 **UI layout** (ZStack):
 - Full-screen `CardPhysicsScene` (ignores safe area)
-- Left-side floating VStack of `AnimationButton`s: Deal, Play, Pick Up, Slide, Reset, Camera, Settings
+- Left-side floating VStack of `AnimationButton`s: Deal (context menu for deal modes), Pick Up (context menu for corners), Reset, Camera, Settings
 - `CameraControlPanel` (slide-in from left): X/Y/Z sliders for position and look-at target
-- `SettingsPanel` (slide-in from right): preset buttons, sliders for durations/arcs/rotations/curvature
+- `SettingsPanel` (slide-in from right): preset buttons, Deal/Pick Up sliders, Card Appearance curvature, Interaction toggle (Tap to Flip Cards)
+
+**iOS 26 Liquid Glass**: All panels and buttons use `.glassEffect()` instead of `.ultraThinMaterial`/`.background(Color)`. Buttons use `.glassEffect(.regular.tint(color).interactive())` for color-coded glass with press feedback. Panels use `.glassEffect(.regular, in: .rect(cornerRadius:))` for translucent containers.
 
 **Reset**: assigns new `sceneKey` UUID and new `SceneCoordinator` to force scene recreation via `.id()`.
 
 **Internal views** (all in this file):
 - `AnimationButton` -- async action button with disabled state during animation
 - `CameraControlPanel` -- slider-based camera adjustment
-- `SettingsPanel` -- physics parameter adjustment with presets
+- `SettingsPanel` -- physics parameter adjustment with presets, interaction toggles
 - `PresetButton`, `SliderSetting` -- reusable UI components
 
 ### CardTextureGenerator.swift -- Card Textures
@@ -177,3 +182,13 @@ Generates all procedural textures using CoreGraphics at 1024x1024 (table) or cus
 **New animation** -- 1) add closure to `SceneCoordinator`, 2) implement method in `CardPhysicsScene`, 3) wire in RealityView content, 4) add button in `CardPhysicsView`.
 
 **Table materials** -- modify `ProceduralTextureGenerator` static methods. Card materials in `CardEntity3D.makeCard()`.
+
+## iOS 26 Features
+
+**Liquid Glass** -- All UI panels and buttons use `.glassEffect()` modifier. Containers use `.glassEffect(.regular, in: shape)`. Interactive buttons use `.glassEffect(.regular.tint(color).interactive(), in: shape)` for color-coded press feedback. Replaces the previous `.ultraThinMaterial` + `.cornerRadius()` + `.shadow()` pattern.
+
+**GestureComponent** -- iOS 26 RealityKit API that attaches SwiftUI gestures directly to entities. Used for tap-to-flip cards. Requires both `InputTargetComponent` and `CollisionComponent` on the entity. Gated behind `PhysicsSettings.enableCardTapGesture` flag (default false). Cards must be dealt/reset after toggling the flag since components are attached at creation time in `createDeck()`.
+
+**APIs investigated but not adopted**:
+- ManipulationComponent, ViewAttachmentComponent, PresentationComponent -- visionOS 26 only
+- Observable Entity / coordinator simplification -- deferred (current coordinator pattern works well)

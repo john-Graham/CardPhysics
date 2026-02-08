@@ -72,8 +72,7 @@ public struct CardPhysicsView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(.black.opacity(0.7))
-                            .cornerRadius(6)
+                            .glassEffect(.regular, in: .capsule)
 
                         AnimationButton(title: "Deal", icon: "square.stack.3d.down.right") {
                             await triggerAnimation(.deal)
@@ -116,9 +115,7 @@ public struct CardPhysicsView: View {
                         }
                     }
                     .padding(8)
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(12)
-                    .shadow(radius: 8)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 12))
                     .padding(.leading, 8)
                     .padding(.bottom, 8)
 
@@ -196,9 +193,8 @@ struct AnimationButton: View {
                     .font(.caption2)
             }
             .frame(width: 90, height: 32)
-            .background(color.opacity(isAnimating ? 0.5 : 1.0))
             .foregroundColor(.white)
-            .cornerRadius(8)
+            .glassEffect(.regular.tint(color.opacity(isAnimating ? 0.3 : 0.6)).interactive(), in: .rect(cornerRadius: 8))
         }
         .disabled(isAnimating)
     }
@@ -337,17 +333,14 @@ struct CameraControlPanel: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
-                        .background(Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(6)
+                        .glassEffect(.regular.tint(Color.blue.opacity(0.6)).interactive(), in: .rect(cornerRadius: 6))
                     }
                 }
                 .padding(12)
             }
             .frame(width: 240)
-            .background(.ultraThinMaterial)
-            .cornerRadius(12)
-            .shadow(radius: 12)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
             .padding(.leading, 8)
             .padding(.vertical, 8)
 
@@ -486,6 +479,15 @@ struct SettingsPanel: View {
 
                     Divider()
 
+                    // Interaction
+                    Text("Interaction")
+                        .font(.headline)
+
+                    Toggle("Tap to Flip Cards", isOn: $settings.enableCardTapGesture)
+                        .font(.subheadline)
+
+                    Divider()
+
                     // Reset to Defaults
                     Button(action: { settings.applyRealisticPreset() }) {
                         HStack {
@@ -496,17 +498,14 @@ struct SettingsPanel: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
-                        .background(Color.red)
                         .foregroundColor(.white)
-                        .cornerRadius(6)
+                        .glassEffect(.regular.tint(Color.red.opacity(0.6)).interactive(), in: .rect(cornerRadius: 6))
                     }
                 }
                 .padding()
             }
             .frame(width: 350)
-            .background(.ultraThinMaterial)
-            .cornerRadius(20)
-            .shadow(radius: 20)
+            .glassEffect(.regular, in: .rect(cornerRadius: 20))
             .padding()
         }
     }
@@ -522,9 +521,8 @@ struct PresetButton: View {
                 .font(.caption)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color.blue)
                 .foregroundColor(.white)
-                .cornerRadius(8)
+                .glassEffect(.regular.tint(Color.blue.opacity(0.6)).interactive(), in: .rect(cornerRadius: 8))
         }
     }
 }
