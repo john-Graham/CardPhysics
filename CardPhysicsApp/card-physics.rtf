@@ -1,0 +1,509 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2867
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red24\green24\blue24;\red52\green55\blue54;\red228\green234\blue244;
+\red246\green249\blue252;\red236\green241\blue247;\red109\green109\blue109;\red164\green69\blue11;\red111\green14\blue195;
+\red134\green86\blue3;\red77\green80\blue85;}
+{\*\expandedcolortbl;;\cssrgb\c12157\c12157\c12157;\cssrgb\c26667\c27843\c27451;\cssrgb\c91373\c93333\c96471;
+\cssrgb\c97255\c98039\c99216;\cssrgb\c94118\c95686\c97647;\cssrgb\c50196\c50196\c50196;\cssrgb\c70980\c34902\c3137;\cssrgb\c51765\c18824\c80784;
+\cssrgb\c60000\c41176\c0;\cssrgb\c37255\c38824\c40784;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat0\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid101\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat0\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}
+{\list\listtemplateid4\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat0\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid301\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid4}
+{\list\listtemplateid5\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid401\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid5}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}{\listoverride\listid5\listoverridecount0\ls5}}
+\paperw15840\paperh24480\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs48 \cf2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Architectural Paradigms for High-Fidelity Physics in Spatial Card Simulations\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 The simulation of thin-film rigid bodies, specifically playing cards, within a spatial computing environment like RealityKit requires a departure from standard game physics configurations. In a digital card space, the user expects a seamless transition between a held state (kinematic control) and a thrown state (dynamic simulation), followed by realistic surface interactions such as sliding, spinning, and stable stacking. Achieving this level of fidelity necessitates a deep understanding of RealityKit\'92s Entity-Component-System (ECS) architecture, the nuances of collision detection for objects with extreme aspect ratios, and the tribological properties of virtual materials. This report provides an exhaustive technical framework for implementing correct physics for dealing cards, ensuring they hit the table, slide with preserved momentum, and interact naturally with existing objects.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 Foundational Architecture and Component Synchronization\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 RealityKit manages physical interactions through a specialized set of components that must be synchronized to ensure a coherent simulation. For an entity like a playing card to participate in the physical world, it requires a minimum of a \cf3 \cb4 \strokec3 CollisionComponent\cf2 \cb1 \strokec2  to define its boundaries and a \cf3 \cb4 \strokec3 PhysicsBodyComponent\cf2 \cb1 \strokec2  to define its inertial properties and material behavior.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 The Role of Entity Protocols and Component Sets\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 In RealityKit, the integration of physics is facilitated by specific protocols, notably \cf3 \cb4 \strokec3 HasPhysicsBody\cf2 \cb1 \strokec2  and \cf3 \cb4 \strokec3 HasCollision\cf2 \cb1 \strokec2 . These protocols provide convenient interfaces for accessing and modifying the physical state of an entity. When a card is initialized, it is typically represented as a \cf3 \cb4 \strokec3 ModelEntity\cf2 \cb1 \strokec2  which, by default, possesses a \cf3 \cb4 \strokec3 PhysicsBodyComponent\cf2 \cb1 \strokec2 . However, the default configuration is rarely sufficient for the high-precision requirements of card dealing.\
+\pard\pardeftab720\sa160\partightenfactor0
+\cf2 A standard card entity configuration involves several interlocking components:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa160\partightenfactor0
+\ls1\ilvl0
+\f0\b \cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 CollisionComponent:
+\f1\b0  Defines the geometry used for intersection testing. For a playing card, a thin box primitive is superior to a mesh-based collider due to its computational efficiency and stability during stacking.\
+\ls1\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 PhysicsBodyComponent:
+\f1\b0  Encapsulates mass, center of mass, inertia tensor, and material properties like friction and restitution.\
+\ls1\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 PhysicsMotionComponent:
+\f1\b0  Essential for entities that move, providing properties for linear and angular velocity.\
+\ls1\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 InputTargetComponent:
+\f1\b0  Necessary if the card is to be selected or manipulated via direct or indirect gestures.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Physics Body Modes and State Transitions\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 The lifecycle of a dealt card involves transitioning through three distinct physics modes. Managing these transitions is critical for the "throwing" mechanic.\
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth1253\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2880
+\clvertalc \clcbpat5 \clwWidth4682\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx5760
+\clvertalc \clcbpat5 \clwWidth7401\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Mode
+\f1\b0 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Mechanical Behavior
+\f1\b0 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Simulation State
+\f1\b0 \cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth1253\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2880
+\clvertalc \clcbpat5 \clwWidth4682\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx5760
+\clvertalc \clcbpat5 \clwWidth7401\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf3 \cb4 \strokec3 static\cf2 \cb1 \strokec2 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Fixed in space; infinite mass.\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Used for the table surface to prevent it from moving upon impact.\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth1253\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2880
+\clvertalc \clcbpat5 \clwWidth4682\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx5760
+\clvertalc \clcbpat5 \clwWidth7401\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf3 \cb4 \strokec3 kinematic\cf2 \cb1 \strokec2 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Controlled via code; ignores external forces.\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Used when a card is being held or during a scripted "draw" animation.\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth1253\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2880
+\clvertalc \clcbpat5 \clwWidth4682\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx5760
+\clvertalc \clcbpat5 \clwWidth7401\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf3 \cb4 \strokec3 dynamic\cf2 \cb1 \strokec2 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Subject to forces, gravity, and collisions.\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Used once the card is released or "flicked" onto the table.\cell \lastrow\row
+\pard\pardeftab720\sa320\partightenfactor0
+\cf2 When a user initiates a throw, the card should be in \cf3 \cb4 \strokec3 kinematic\cf2 \cb1 \strokec2  mode to follow the hand's trajectory perfectly without jitter from micro-collisions. Upon release, a mode switch to \cf3 \cb4 \strokec3 dynamic\cf2 \cb1 \strokec2  allows the physics engine to take over, applying the final gesture velocity as an impulse.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 High-Precision Geometry and Collision Management\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 Playing cards present a classic "thin-object" problem in computational physics. With a typical thickness of approximately $0.0003$ meters ($0.3$ mm), cards are prone to "tunneling," a phenomenon where an object moves so fast that its position in frame $A$ and frame $B$ are on opposite sides of a collider, causing it to pass through entirely.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Continuous Collision Detection (CCD)\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 To prevent cards from falling through the table or passing through other cards, \cf3 \cb4 \strokec3 isContinuousCollisionDetectionEnabled\cf2 \cb1 \strokec2  must be set to \cf3 \cb4 \strokec3 true\cf2 \cb1 \strokec2  on the \cf3 \cb4 \strokec3 PhysicsBodyComponent\cf2 \cb1 \strokec2 . Standard discrete collision detection only samples intersections once per frame (roughly every $16$ ms at $60$ fps). CCD, however, calculates a swept volume between frames, ensuring that even a paper-thin card traveling at high speed will register an impact with the table surface.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Solving for the Tiny Object Scale Limitation\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 RealityKit\'92s physics engine is numerically optimized for objects within a specific size range, typically larger than one cubic centimeter. Cards fall outside this optimal range, leading to unstable stacking and unrealistic bouncing. A sophisticated solution involves re-architecting the scene hierarchy to separate the scene root from the physics origin.\
+By parenting all simulation entities to a dedicated \cf3 \cb4 \strokec3 physicsOrigin\cf2 \cb1 \strokec2  entity, developers can apply an inverse scale to the physics calculations without affecting the visual scale of the objects. For instance, if the visual cards are $0.0003$ meters thick, scaling the \cf3 \cb4 \strokec3 physicsOrigin\cf2 \cb1 \strokec2  to $0.1$ effectively makes the physics engine treat the world as $10\\times$ larger, allowing for more precise floating-point calculations during collision resolution.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Linear and Angular Damping Optimization\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 By default, RealityKit applies a non-zero \cf3 \cb4 \strokec3 linearDamping\cf2 \cb1 \strokec2  value (typically $0.02$) to all dynamic entities to stabilize the simulation. While useful for large spheres, this damping causes sliding cards to lose momentum much faster than they would in the real world. To achieve a natural slide where a card glides across a felt or wooden table, \cf3 \cb4 \strokec3 linearDamping\cf2 \cb1 \strokec2  and \cf3 \cb4 \strokec3 angularDamping\cf2 \cb1 \strokec2  should both be set to $0.0$. This preserves the kinetic energy of the "flick" and relies solely on friction for deceleration.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 Tribological Modeling: Friction and Restitution\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 The "feel" of a card game is dictated by the interaction between the card's surface and the table. This is governed by the \cf3 \cb4 \strokec3 PhysicsMaterialResource\cf2 \cb1 \strokec2 , which defines friction and restitution.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Defining Realistic Material Properties\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 Friction in RealityKit is divided into \cf3 \cb4 \strokec3 staticFriction\cf2 \cb1 \strokec2  and \cf3 \cb4 \strokec3 dynamicFriction\cf2 \cb1 \strokec2 . Static friction determines the force required to start a slide, while dynamic friction determines the resistance applied while the card is in motion. For cards, these values should reflect the materials being simulated.\
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth2428\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2160
+\clvertalc \clcbpat5 \clwWidth2106\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx4320
+\clvertalc \clcbpat5 \clwWidth2253\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx6480
+\clvertalc \clcbpat5 \clwWidth4625\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Material Interaction
+\f1\b0 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Static Friction (\uc0\u956 s )
+\f1\b0 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Kinetic Friction (\uc0\u956 k )
+\f1\b0 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Application
+\f1\b0 \cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth2428\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2160
+\clvertalc \clcbpat5 \clwWidth2106\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx4320
+\clvertalc \clcbpat5 \clwWidth2253\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx6480
+\clvertalc \clcbpat5 \clwWidth4625\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Plastic on Dry Wood\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 0.40\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 0.30 - 0.40\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Cards sliding on a bare table.\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth2428\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2160
+\clvertalc \clcbpat5 \clwWidth2106\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx4320
+\clvertalc \clcbpat5 \clwWidth2253\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx6480
+\clvertalc \clcbpat5 \clwWidth4625\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Leather on Oak\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 0.61\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 0.52\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Cards sliding on a felt-covered table.\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth2428\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2160
+\clvertalc \clcbpat5 \clwWidth2106\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx4320
+\clvertalc \clcbpat5 \clwWidth2253\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx6480
+\clvertalc \clcbpat5 \clwWidth4625\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Card on Card\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 0.30 - 0.50\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 0.20 - 0.30\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Interaction between cards in a stack.\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth2428\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2160
+\clvertalc \clcbpat5 \clwWidth2106\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx4320
+\clvertalc \clcbpat5 \clwWidth2253\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx6480
+\clvertalc \clcbpat5 \clwWidth4625\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Waxed Wood on Snow\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 0.14\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 0.10\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Low-friction limit for "slick" card maneuvers.\cell \lastrow\row
+\pard\pardeftab720\sa320\partightenfactor0
+\cf2 Restitution, or bounciness, should be kept low ($0.1$ to $0.2$) for playing cards. A card hitting a table should experience an inelastic collision, coming to a flat rest almost immediately rather than bouncing like a ball.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Combining Surface Characteristics\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 It is important to note that RealityKit combines the friction and restitution values of both colliding bodies. To ensure a card slides a specific distance on a table, both the card\'92s material and the table\'92s material must be configured. If the table has a friction of $0.8$ and the card has $0.0$, the resulting interaction will still feel high-friction.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 Mechanics of the Throw: Impulse and Velocity\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 A realistic deal requires the application of both linear and angular momentum at the point of release. This is achieved using impulses, which apply a change in momentum over a single frame.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Linear Impulse Calculation\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 The linear impulse $\\vec\{J\}$ is a vector representing the force applied over time:\
+\pard\pardeftab720\partightenfactor0
+\cf2 $$\\vec\{J\} = m \\Delta \\vec\{v\}$$\
+\pard\pardeftab720\sa320\partightenfactor0
+\cf2 Where $m$ is the mass of the card and $\\Delta \\vec\{v\}$ is the change in velocity. During a flick gesture, the system calculates the velocity of the drag in points per second and converts it to meters per second using the \cf3 \cb4 \strokec3 RealityView\cf2 \cb1 \strokec2  convert functions.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Angular Impulse and Gyroscopic Stability\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 Cards are rarely thrown without spin. Applying an angular impulse around the card's local Y-axis (vertical to the card face) creates a spinning motion that stabilizes the card's flight and influences its path as it slides across the table.\
+The torque $\\vec\{\\tau\}$ and angular impulse $\\vec\{H\}$ are defined as:\
+\pard\pardeftab720\partightenfactor0
+\cf2 $$\\vec\{H\} = I \\Delta \\vec\{\\omega\}$$\
+\pard\pardeftab720\sa320\partightenfactor0
+\cf2 Where $I$ is the moment of inertia and $\\vec\{\\omega\}$ is the angular velocity. In code, this looks like:\
+\pard\pardeftab720\partightenfactor0
+\cf3 \cb6 \strokec3 Swift\cb1 \
+\pard\pardeftab720\qc\partightenfactor0
+
+\fs48 \cf3 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\fs28 \cf3 \cb6 card.applyAngularImpulse([\cf8 \strokec8 0\cf3 \strokec3 , spinMagnitude, \cf8 \strokec8 0\cf3 \strokec3 ], relativeTo: card)\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\fs24 \cf2 \cb1 \strokec2 Applying a small angular impulse at release prevents the card from appearing "lifeless" during the slide.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 Stacking Dynamics and Numerical Stability\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 Interacting with cards already on the table introduces the challenge of stacking stability. In many physics engines, stacks of thin objects tend to vibrate or "pop" due to unresolved penetration between colliders.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Solver Iteration Tuning\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 The \cf3 \cb4 \strokec3 PhysicsSimulationComponent\cf2 \cb1 \strokec2  allows developers to increase the precision of the solver. For card stacking, \cf3 \cb4 \strokec3 positionIterations\cf2 \cb1 \strokec2  should be increased from the default to at least $12$ or $16$. This ensures that the engine performs more passes per frame to resolve the overlaps between thin cards, significantly reducing jitter.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Penetration Slop and Sleep States\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 "Slop" is a small allowed penetration depth between colliders that prevents the solver from constantly fighting tiny overlaps. If a card is nearly stationary, it should be allowed to enter a "sleep" state where physics is no longer calculated for it until another object collides with it. This is vital for performance when dozens of cards are on the table.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 TabletopKit: An Alternative Stacking Solution\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 For developers requiring hyper-realistic card stacking that physics engines alone struggle to provide, Apple's 
+\f0\b TabletopKit
+\f1\b0  offers a specialized set of solvers. TabletopKit uses a 
+\f0\b Bounded Convex Hull Solver
+\f1\b0  and a 
+\f0\b Center of Mass Solver
+\f1\b0  specifically designed for thin equipment like playing cards.\
+\pard\pardeftab720\sa160\partightenfactor0
+\cf2 Instead of relying solely on force-based rigid body dynamics, TabletopKit:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa160\partightenfactor0
+\ls2\ilvl0\cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Analyzes the 2D projected overlap of cards.\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Uses a QuickHull algorithm to find support points from underlying cards.\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	3	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Calculates a stable, non-intersecting 3D pose (position and tilt) for each card in a stack.\
+\pard\pardeftab720\sa320\partightenfactor0
+\cf2 This "settling" algorithm ensures that cards pile up in a physically believable manner without the jittering typical of pure rigid body simulations.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 Gesture Coordination and Input Handling\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 The transition from a user's flick to a card's flight is managed through SwiftUI gestures integrated into the RealityKit ECS.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Capturing Throw Velocity\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f1\b0\fs24 \cf2 A \cf3 \cb4 \strokec3 DragGesture\cf2 \cb1 \strokec2  provides a \cf3 \cb4 \strokec3 velocity\cf2 \cb1 \strokec2  property, but this velocity is in SwiftUI points. To convert this into a meaningful physical impulse, the system must:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa160\partightenfactor0
+\ls3\ilvl0\cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Track the total translation and the time elapsed since the gesture started.\
+\ls3\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Convert the start and end points from the \cf3 \cb4 \strokec3 RealityView\cf2 \cb1 \strokec2  coordinate space to the world space.\
+\ls3\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Apply the resulting vector to the card's \cf3 \cb4 \strokec3 PhysicsMotionComponent\cf2 \cb1 \strokec2  or via \cf3 \cb4 \strokec3 applyLinearImpulse\cf2 \cb1 \strokec2 .\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Gesture State Management\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 To handle complex interactions like "flicking," a custom \cf3 \cb4 \strokec3 GestureComponent\cf2 \cb1 \strokec2  is often used to store the starting state of the entity. This ensures that the impulse is calculated based on the user's intent rather than a single frame's movement, which may be noisy.\
+\pard\pardeftab720\partightenfactor0
+\cf3 \cb6 \strokec3 Swift\cb1 \
+\pard\pardeftab720\qc\partightenfactor0
+
+\fs48 \cf3 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\fs28 \cf9 \cb6 \strokec9 struct\cf10 \strokec10  GestureStateComponent: Component \cf3 \strokec3 \{\
+    \cf9 \strokec9 var\cf3 \strokec3  initialPosition: \cf9 \strokec9 SIMD3\cf3 \strokec3 <\cf9 \strokec9 Float\cf3 \strokec3 >?\
+    \cf9 \strokec9 var\cf3 \strokec3  lastVelocity: \cf9 \strokec9 SIMD3\cf3 \strokec3 <\cf9 \strokec9 Float\cf3 \strokec3 > \cf2 \strokec2 =\cf3 \strokec3 .zero\
+\}\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\fs24 \cf2 \cb1 \strokec2 By maintaining a rolling average of velocity during the \cf3 \cb4 \strokec3 onChange\cf2 \cb1 \strokec2  phase of the gesture, the system can provide a much more consistent "throw" experience.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 Collision Events and Interaction Logic\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 To detect when a card has hit the table or another card, the system must subscribe to \cf3 \cb4 \strokec3 CollisionEvents\cf2 \cb1 \strokec2 .\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Subscribing to Collision Streams\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 Subscriptions are managed through the RealityKit \cf3 \cb4 \strokec3 Scene\cf2 \cb1 \strokec2  and typically stored in an array to manage their lifecycle.\
+\pard\pardeftab720\partightenfactor0
+\cf3 \cb6 \strokec3 Swift\cb1 \
+\pard\pardeftab720\qc\partightenfactor0
+
+\fs48 \cf3 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\fs28 \cf3 \cb6 scene.subscribe(to: \cf9 \strokec9 CollisionEvents\cf3 \strokec3 .\cf9 \strokec9 Began\cf3 \strokec3 .\cf9 \strokec9 self\cf3 \strokec3 ) \{ event \cf9 \strokec9 in\cf3 \strokec3 \
+    \cf9 \strokec9 let\cf3 \strokec3  card \cf2 \strokec2 =\cf3 \strokec3  event.entityA\
+    \cf9 \strokec9 let\cf3 \strokec3  table \cf2 \strokec2 =\cf3 \strokec3  event.entityB\
+    \cf11 \strokec11 // Play impact sound or haptic feedback\cf3 \strokec3 \
+\}\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\fs24 \cf2 \cb1 \strokec2 By identifying the entities involved via \cf3 \cb4 \strokec3 event.entityA\cf2 \cb1 \strokec2  and \cf3 \cb4 \strokec3 event.entityB\cf2 \cb1 \strokec2 , the system can trigger specific game logic, such as updating the game state when a card lands in a specific zone or stack.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Collision Filtering for Stack Stability\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 To optimize the simulation, cards should not collide with every object in the scene. Using \cf3 \cb4 \strokec3 CollisionGroup\cf2 \cb1 \strokec2  and \cf3 \cb4 \strokec3 CollisionFilter\cf2 \cb1 \strokec2 , developers can ensure that cards only interact with the table and other cards.\
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth1174\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2880
+\clvertalc \clcbpat5 \clwWidth3001\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx5760
+\clvertalc \clcbpat5 \clwWidth6496\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Parameter
+\f1\b0 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Function
+\f1\b0 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Card Simulation Strategy
+\f1\b0 \cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth1174\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2880
+\clvertalc \clcbpat5 \clwWidth3001\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx5760
+\clvertalc \clcbpat5 \clwWidth6496\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Group
+\f1\b0 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Defines what the object is.\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Assign all cards to a \cf3 \cb4 \strokec3 cardGroup\cf2 \cb1 \strokec2 .\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trcbpat6 \tamarb640 \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clcbpat5 \clwWidth1174\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx2880
+\clvertalc \clcbpat5 \clwWidth3001\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx5760
+\clvertalc \clcbpat5 \clwWidth6496\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrs\brdrw20\brdrcf2 \clbrdrl\brdrs\brdrw20\brdrcf2 \clbrdrb\brdrs\brdrw20\brdrcf2 \clbrdrr\brdrs\brdrw20\brdrcf2 \clpadt160 \clpadl240 \clpadb160 \clpadr240 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f0\b \cf2 Mask
+\f1\b0 \cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Defines what the object hits.\cell 
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+\cf2 Set the card mask to include \cf3 \cb4 \strokec3 tableGroup\cf2 \cb1 \strokec2  and \cf3 \cb4 \strokec3 cardGroup\cf2 \cb1 \strokec2 .\cell \lastrow\row
+\pard\pardeftab720\sa320\partightenfactor0
+\cf2 This filtering prevents cards from colliding with the user's invisible gaze-interactor or other non-essential environment colliders, saving CPU cycles.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 Performance Optimization and Debugging\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 A scene with a full deck of 52 dynamic cards can quickly become a performance bottleneck if not optimized.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Monitoring System Performance\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 RealityKit provides a \cf3 \cb4 \strokec3 showStatistics\cf2 \cb1 \strokec2  debug option that displays the frame rate and time spent on ECS updates and physics calculations. For a 60 fps target, each frame must complete all calculations within $16.6$ ms. If physics calculations exceed a few milliseconds, the number of active dynamic bodies must be reduced.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Polygon Count and Shader Complexity\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f1\b0\fs24 \cf2 Playing cards are geometrically simple, but high-resolution textures can impact the GPU.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa160\partightenfactor0
+\ls4\ilvl0
+\f0\b \cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Polygon Count:
+\f1\b0  A simple box primitive for a card should have a very low polygon count (e.g., $12$ triangles).\
+\ls4\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Shadows:
+\f1\b0  Shadows are computationally expensive. Reducing the number of lights that cast shadows onto the cards can improve performance significantly in dense scenes.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs28 \cf2 Spatial Partitioning and Broad-Phase Optimization\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 RealityKit uses internal spatial partitioning to quickly prune objects that are too far apart to collide. By ensuring that cards that have "settled" are moved to a \cf3 \cb4 \strokec3 .static\cf2 \cb1 \strokec2  or \cf3 \cb4 \strokec3 .kinematic\cf2 \cb1 \strokec2  state with \cf3 \cb4 \strokec3 isSimulationEnabled = false\cf2 \cb1 \strokec2 , the developer can manually assist the engine's broad-phase optimization.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 Advanced Physics Tuning: The Slop and Penetration Resolution\
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f1\b0\fs24 \cf2 One of the deeper insights into rigid body dynamics involves the "slop" or "penetration allowance". When a card sits on a table, gravity pulls it down while the table's normal force pushes it up. If the solver is too aggressive, the card will vibrate as it is pushed back and forth across the collision boundary.\
+By allowing a tiny amount of penetration (slop), the solver can reach a resting state where the normal force exactly balances gravity. In RealityKit, this is partially managed by the \cf3 \cb4 \strokec3 restitution\cf2 \cb1 \strokec2  and \cf3 \cb4 \strokec3 solverIterations\cf2 \cb1 \strokec2  settings. Setting restitution to $0$ for a "totally inelastic" collision is essential for cards to prevent them from "chattering" on the table surface.\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f0\b\fs36 \cf2 Synthesis of a Robust Card Space\
+\pard\pardeftab720\sa160\partightenfactor0
+
+\f1\b0\fs24 \cf2 To create a correct physics-based card space, the implementation must weave together several technical threads:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa160\partightenfactor0
+\ls5\ilvl0
+\f0\b \cf2 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Hierarchy:
+\f1\b0  Use a separate \cf3 \cb4 \strokec3 physicsOrigin\cf2 \cb1 \strokec2  scaled to $0.1$ to handle the tiny thickness of the cards.\
+\ls5\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Materials:
+\f1\b0  Use custom \cf3 \cb4 \strokec3 PhysicsMaterialResource\cf2 \cb1 \strokec2  with zero \cf3 \cb4 \strokec3 linearDamping\cf2 \cb1 \strokec2  to ensure cards slide.\
+\ls5\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	3	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Simulation:
+\f1\b0  Enable \cf3 \cb4 \strokec3 CCD\cf2 \cb1 \strokec2  on all cards and increase solver iterations to $12+$ for stack stability.\
+\ls5\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	4	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Interaction:
+\f1\b0  Transition from kinematic hand-tracking to dynamic flight, injecting linear and angular impulses at the release point.\
+\ls5\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	5	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Hybrid Approach:
+\f1\b0  Consider 
+\f0\b TabletopKit
+\f1\b0  for resolving dense stacks where standard physics engines may fail.\
+\pard\pardeftab720\sa320\partightenfactor0
+\cf2 By following this technical guidance, the card dealing simulation will move beyond simple animations to a tactile, physically accurate experience where virtual cards respond to momentum, surface friction, and the presence of other objects on the virtual table.\
+}
