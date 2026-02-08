@@ -17,6 +17,9 @@ public final class PhysicsSettings: Sendable {
     // MARK: - Card Appearance
     public var cardCurvature: Float = 0.002
 
+    // MARK: - Interaction
+    public var enableCardTapGesture: Bool = false
+
     public init() {}
 
     // MARK: - Presets

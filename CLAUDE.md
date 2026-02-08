@@ -7,7 +7,7 @@ iOS sandbox app for developing and tuning realistic card animations and physics 
 ```
 CardPhysics/
 ├── CardPhysicsPackage/          # Swift Package with all core logic (CardPhysicsKit library)
-│   ├── Package.swift            # swift-tools-version: 6.0, iOS 18+
+│   ├── Package.swift            # swift-tools-version: 6.2, iOS 26+
 │   ├── Sources/CardPhysicsKit/  # 3D scene, physics, entities, textures, UI
 │   └── Tests/CardPhysicsKitTests/
 ├── CardPhysicsApp/              # Xcode project wrapper (thin shell around CardPhysicsKit)
@@ -26,15 +26,17 @@ CardPhysics/
 
 ## Build and Run
 1. Open `CardPhysicsApp/CardPhysicsApp.xcodeproj` in Xcode 16.3+
-2. Select an iOS 18+ simulator or device
+2. Select an iOS 26+ simulator or device
 3. Build and run the CardPhysicsApp scheme
 
 The root `Package.swift` defines an SPM executable target (`Sources/CardPhysicsApp/`) but the real app is built through the Xcode project, which depends on `CardPhysicsPackage/` as a local Swift package.
 
 ## Key Conventions
 - **Swift 6.1+** with StrictConcurrency and ExistentialAny enabled in the package
-- **iOS 18.0+** minimum deployment target
+- **iOS 26.0+** minimum deployment target (currently 26.2)
 - **SwiftUI + RealityKit** for all UI and 3D rendering
+- **Liquid Glass** design language for all floating panels and buttons (iOS 26 `.glassEffect`)
+- **GestureComponent** (iOS 26 RealityKit) for entity-level tap gestures (feature-flagged)
 - **Apple Testing framework** for unit tests
 - App target is intentionally minimal -- all logic lives in CardPhysicsKit
 - Landscape-only orientation, locked at app launch

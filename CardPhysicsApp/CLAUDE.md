@@ -10,7 +10,7 @@ CardPhysicsApp is an iOS application that demonstrates realistic 3D card physics
 - `card-physics.rtf` - Reference document on spatial card physics theory
 
 ## Dependencies
-- iOS 18.0+
+- iOS 26.0+ (currently 26.2)
 - CardPhysicsKit (local Swift package at ../CardPhysicsPackage)
 - SwiftUI, RealityKit, UIKit
 
