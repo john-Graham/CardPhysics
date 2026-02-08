@@ -3,24 +3,23 @@ import Foundation
 @Observable
 @MainActor
 public final class PhysicsSettings: Sendable {
-    // Animation speeds (seconds)
+
+    // MARK: - Deal Animation
     public var dealDuration: Double = 0.5
-    public var pickUpDuration: Double = 0.3
-
-    // Arc heights (meters)
     public var dealArcHeight: Float = 0.15
-    public var pickUpArcHeight: Float = 0.08
-
-    // Rotation amounts (degrees)
     public var dealRotation: Double = 15.0
+
+    // MARK: - Pick Up Animation
+    public var pickUpDuration: Double = 0.3
+    public var pickUpArcHeight: Float = 0.08
     public var pickUpRotation: Double = 5.0
 
-    // Card curvature (0.0 = flat, higher = more curve)
+    // MARK: - Card Appearance
     public var cardCurvature: Float = 0.002
 
     public init() {}
 
-    // Preset configurations
+    // MARK: - Presets
     public func applyRealisticPreset() {
         dealDuration = 0.5
         pickUpDuration = 0.3

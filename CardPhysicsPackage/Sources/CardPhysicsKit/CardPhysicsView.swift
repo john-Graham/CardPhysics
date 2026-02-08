@@ -1,10 +1,33 @@
 import SwiftUI
 
+public enum DealMode: String, CaseIterable, Sendable {
+    case four = "4 Cards"
+    case twelve = "12 Cards"
+    case twenty = "20 Cards"
+    case euchre = "Euchre"
+
+    var cardCount: Int {
+        switch self {
+        case .four: return 4
+        case .twelve: return 12
+        case .twenty: return 20
+        case .euchre: return 20
+        }
+    }
+}
+
+public enum GatherCorner: String, CaseIterable, Sendable {
+    case bottomLeft = "Bottom Left"
+    case topLeft = "Top Left"
+    case topRight = "Top Right"
+    case bottomRight = "Bottom Right"
+}
+
 @MainActor
 @Observable
 public class SceneCoordinator {
-    public var dealCardsAction: (() async -> Void)?
-    public var pickUpCardAction: ((Int) async -> Void)?
+    public var dealCardsAction: ((DealMode) async -> Void)?
+    public var pickUpCardAction: ((GatherCorner) async -> Void)?
     public var resetCardsAction: (() -> Void)?
 
     public init() {}
@@ -19,6 +42,8 @@ public struct CardPhysicsView: View {
     @State private var cameraPosition: SIMD3<Float> = [0, 0.55, 0.41]
     @State private var cameraTarget: SIMD3<Float> = [0, 0, 0]
     @State private var coordinator = SceneCoordinator()
+    @State private var selectedDealMode: DealMode = .twelve
+    @State private var selectedCorner: GatherCorner = .bottomLeft
 
     public init() {}
 
@@ -53,9 +78,29 @@ public struct CardPhysicsView: View {
                         AnimationButton(title: "Deal", icon: "square.stack.3d.down.right") {
                             await triggerAnimation(.deal)
                         }
+                        .contextMenu {
+                            ForEach(DealMode.allCases, id: \.self) { mode in
+                                Button(mode.rawValue) {
+                                    selectedDealMode = mode
+                                    Task {
+                                        await triggerAnimation(.deal)
+                                    }
+                                }
+                            }
+                        }
 
                         AnimationButton(title: "Pick Up", icon: "hand.raised") {
                             await triggerAnimation(.pickUp)
+                        }
+                        .contextMenu {
+                            ForEach(GatherCorner.allCases, id: \.self) { corner in
+                                Button(corner.rawValue) {
+                                    selectedCorner = corner
+                                    Task {
+                                        await triggerAnimation(.pickUp)
+                                    }
+                                }
+                            }
                         }
 
                         AnimationButton(title: "Reset", icon: "arrow.counterclockwise", color: .red) {
@@ -116,9 +161,9 @@ public struct CardPhysicsView: View {
     private func triggerAnimation(_ type: AnimationType) async {
         switch type {
         case .deal:
-            await coordinator.dealCardsAction?()
+            await coordinator.dealCardsAction?(selectedDealMode)
         case .pickUp:
-            await coordinator.pickUpCardAction?(0)
+            await coordinator.pickUpCardAction?(selectedCorner)
         }
     }
 
@@ -314,6 +359,8 @@ struct CameraControlPanel: View {
 struct SettingsPanel: View {
     @Bindable var settings: PhysicsSettings
     @Binding var isPresented: Bool
+    @State private var dealExpanded = true
+    @State private var pickUpExpanded = true
 
     var body: some View {
         HStack {
@@ -355,78 +402,80 @@ struct SettingsPanel: View {
 
                     Divider()
 
-                    // Animation Durations
-                    Text("Animation Durations")
-                        .font(.headline)
+                    // Deal animation settings
+                    DisclosureGroup(isExpanded: $dealExpanded) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SliderSetting(
+                                label: "Duration",
+                                value: $settings.dealDuration,
+                                range: 0.1...3.0,
+                                unit: "s"
+                            )
 
-                    SliderSetting(
-                        label: "Deal Duration",
-                        value: $settings.dealDuration,
-                        range: 0.1...3.0,
-                        unit: "s"
-                    )
+                            SliderSetting(
+                                label: "Arc Height",
+                                value: Binding(
+                                    get: { Double(settings.dealArcHeight) },
+                                    set: { settings.dealArcHeight = Float($0) }
+                                ),
+                                range: 0.0...0.4,
+                                unit: "m"
+                            )
 
-                    SliderSetting(
-                        label: "Pick Up Duration",
-                        value: $settings.pickUpDuration,
-                        range: 0.1...1.5,
-                        unit: "s"
-                    )
+                            SliderSetting(
+                                label: "Rotation",
+                                value: $settings.dealRotation,
+                                range: 0...90,
+                                unit: "°"
+                            )
+                        }
+                        .padding(.top, 8)
+                    } label: {
+                        Text("Deal")
+                            .font(.headline)
+                    }
+
+                    // Pick Up animation settings
+                    DisclosureGroup(isExpanded: $pickUpExpanded) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SliderSetting(
+                                label: "Duration",
+                                value: $settings.pickUpDuration,
+                                range: 0.1...1.5,
+                                unit: "s"
+                            )
+
+                            SliderSetting(
+                                label: "Arc Height",
+                                value: Binding(
+                                    get: { Double(settings.pickUpArcHeight) },
+                                    set: { settings.pickUpArcHeight = Float($0) }
+                                ),
+                                range: 0.0...0.2,
+                                unit: "m"
+                            )
+
+                            SliderSetting(
+                                label: "Rotation",
+                                value: $settings.pickUpRotation,
+                                range: 0...30,
+                                unit: "°"
+                            )
+                        }
+                        .padding(.top, 8)
+                    } label: {
+                        Text("Pick Up")
+                            .font(.headline)
+                    }
 
                     Divider()
 
-                    // Arc Heights
-                    Text("Arc Heights")
-                        .font(.headline)
-
-                    SliderSetting(
-                        label: "Deal Arc",
-                        value: Binding(
-                            get: { Double(settings.dealArcHeight) },
-                            set: { settings.dealArcHeight = Float($0) }
-                        ),
-                        range: 0.0...0.4,
-                        unit: "m"
-                    )
-
-                    SliderSetting(
-                        label: "Pick Up Arc",
-                        value: Binding(
-                            get: { Double(settings.pickUpArcHeight) },
-                            set: { settings.pickUpArcHeight = Float($0) }
-                        ),
-                        range: 0.0...0.2,
-                        unit: "m"
-                    )
-
-                    Divider()
-
-                    // Rotations
-                    Text("Rotations")
-                        .font(.headline)
-
-                    SliderSetting(
-                        label: "Deal Rotation",
-                        value: $settings.dealRotation,
-                        range: 0...90,
-                        unit: "°"
-                    )
-
-                    SliderSetting(
-                        label: "Pick Up Rotation",
-                        value: $settings.pickUpRotation,
-                        range: 0...30,
-                        unit: "°"
-                    )
-
-                    Divider()
-
-                    // Card Curvature
+                    // Card Appearance
                     Text("Card Appearance")
                         .font(.headline)
 
                     SliderSetting(
-                        label: "Card Curvature",
+                        label: "Curvature",
                         value: Binding(
                             get: { Double(settings.cardCurvature) },
                             set: { settings.cardCurvature = Float($0) }
@@ -434,6 +483,23 @@ struct SettingsPanel: View {
                         range: 0.0...0.01,
                         unit: ""
                     )
+
+                    Divider()
+
+                    // Reset to Defaults
+                    Button(action: { settings.applyRealisticPreset() }) {
+                        HStack {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.caption2)
+                            Text("Reset to Defaults")
+                                .font(.caption)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color.red)
+                        .foregroundColor(.white)
+                        .cornerRadius(6)
+                    }
                 }
                 .padding()
             }

@@ -42,11 +42,11 @@ public struct CardPhysicsScene: View {
             createDeck()
 
             // Set up coordinator actions
-            coordinator?.dealCardsAction = { [self] in
-                await self.dealCards()
+            coordinator?.dealCardsAction = { [self] mode in
+                await self.dealCards(mode: mode)
             }
-            coordinator?.pickUpCardAction = { [self] index in
-                await self.pickUpCard(index: index)
+            coordinator?.pickUpCardAction = { [self] corner in
+                await self.gatherAndPickUp(corner: corner)
             }
             coordinator?.resetCardsAction = { [self] in
                 self.resetCards()
@@ -355,36 +355,28 @@ public struct CardPhysicsScene: View {
         rootEntity.addChild(rimLight)
     }
 
-    private func createDeck() {
-        // Create 12 cards for dealing (3 rounds to each of 4 sides)
-        let sampleCards: [Card] = [
-            Card(suit: .hearts, rank: .ace),
-            Card(suit: .spades, rank: .king),
-            Card(suit: .diamonds, rank: .queen),
-            Card(suit: .clubs, rank: .jack),
-            Card(suit: .hearts, rank: .ten),
-            Card(suit: .spades, rank: .nine),
-            Card(suit: .diamonds, rank: .king),
-            Card(suit: .clubs, rank: .ace),
-            Card(suit: .hearts, rank: .queen),
-            Card(suit: .spades, rank: .jack),
-            Card(suit: .diamonds, rank: .ten),
-            Card(suit: .clubs, rank: .nine)
-        ]
+    private func createDeck(count: Int = 12) {
+        // Build a pool of cards by cycling through the full Euchre deck
+        let allCards: [Card] = Suit.allCases.flatMap { suit in
+            Rank.allCases.map { rank in Card(suit: suit, rank: rank) }
+        }
+        var sampleCards: [Card] = []
+        for i in 0..<count {
+            let template = allCards[i % allCards.count]
+            sampleCards.append(Card(suit: template.suit, rank: template.rank))
+        }
 
         for (index, card) in sampleCards.enumerated() {
             let cardEntity = CardEntity3D.makeCard(
                 card,
-                faceUp: false,  // Start face down, will flip during deal animation
+                faceUp: false,
                 enableTap: false,
-                curvature: 0.0  // Flat cards when dealing (no curve)
+                curvature: 0.0
             )
 
-            // Start cards at deck position, floating visibly above table
-            // Table surface is at y=0.005, float cards higher for visibility
-            let stackOffset: Float = 0.0015  // Thinner spacing (1.5mm between cards)
-            let deckThickness: Float = Float(sampleCards.count - 1) * stackOffset  // Total deck thickness
-            let baseHeight: Float = max(0.015, deckThickness * 5.0)  // At least 5x deck thickness
+            let stackOffset: Float = 0.0015
+            let deckThickness: Float = Float(sampleCards.count - 1) * stackOffset
+            let baseHeight: Float = max(0.015, deckThickness * 5.0)
             cardEntity.position = SIMD3<Float>(
                 deckPosition.position.x,
                 baseHeight + Float(index) * stackOffset,
@@ -398,18 +390,68 @@ public struct CardPhysicsScene: View {
 
     // MARK: - Animation Methods (to be called from parent view)
 
-    public func dealCards() async {
-        // Deal cards from top of deck (highest index) to bottom, tossing them toward sides 2, 3, 4 (left, top, right)
-        for (dealIndex, cardIndex) in cards.indices.reversed().enumerated() {
-            let card = cards[cardIndex]
-            await dealCard(card, index: dealIndex, delay: Double(dealIndex) * 0.3)
+    public func dealCards(mode: DealMode) async {
+        // Remove existing cards and create correct count for this mode
+        for card in cards { card.removeFromParent() }
+        cards.removeAll()
+        createDeck(count: mode.cardCount)
+
+        switch mode {
+        case .euchre:
+            await dealCardsEuchre()
+        case .four, .twelve, .twenty:
+            await dealCardsStandard()
         }
     }
 
-    private func dealCard(_ card: Entity, index: Int, delay: Double) async {
+    private func dealCardsStandard() async {
+        // Deal cards one at a time, cycling through sides 2, 3, 4, 1
+        for (dealIndex, cardIndex) in cards.indices.reversed().enumerated() {
+            let card = cards[cardIndex]
+            await dealSingleCard(card, toSide: [2, 3, 4, 1][dealIndex % 4], delay: Double(dealIndex) * 0.3)
+        }
+    }
+
+    private func dealCardsEuchre() async {
+        // Euchre dealing: 2 rounds, alternating bundles of 2 and 3
+        // Round 1: 2 to side 2, 3 to side 3, 2 to side 4, 3 to side 1 (10 cards)
+        // Round 2: 3 to side 2, 2 to side 3, 3 to side 4, 2 to side 1 (10 cards)
+        let bundles: [(count: Int, side: Int)] = [
+            // Round 1
+            (2, 2), (3, 3), (2, 4), (3, 1),
+            // Round 2
+            (3, 2), (2, 3), (3, 4), (2, 1)
+        ]
+
+        var cardPointer = cards.count - 1  // Start from top of deck
+        for bundle in bundles {
+            guard cardPointer >= 0 else { break }
+            let bundleCards = (0..<bundle.count).compactMap { offset -> Entity? in
+                let idx = cardPointer - offset
+                guard idx >= 0 else { return nil }
+                return cards[idx]
+            }
+            cardPointer -= bundle.count
+
+            // Throw all cards in the bundle nearly simultaneously with tight clustering
+            for (offsetInBundle, card) in bundleCards.enumerated() {
+                await dealSingleCard(
+                    card,
+                    toSide: bundle.side,
+                    delay: Double(offsetInBundle) * 0.05,
+                    randomSpread: 0.025
+                )
+            }
+
+            // Pause between bundles
+            try? await Task.sleep(for: .seconds(0.3))
+        }
+    }
+
+    private func dealSingleCard(_ card: Entity, toSide sideIndex: Int, delay: Double, randomSpread: Float = 0.015) async {
         try? await Task.sleep(for: .seconds(delay))
 
-        // Flip the card face-up first with rotation
+        // Flip the card face-up
         card.orientation = simd_quatf(angle: .pi, axis: [1, 0, 0])
 
         // Switch to dynamic mode so cards can interact with physics
@@ -418,44 +460,30 @@ public struct CardPhysicsScene: View {
             card.components[PhysicsBodyComponent.self] = physicsBody
         }
 
-        // Determine target side: cycle through 2 (left), 3 (top), 4 (right), 1 (bottom)
-        // Pattern: 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1
-        let sidePattern = [2, 3, 4, 1]
-        let sideIndex = sidePattern[index % 4]
+        let randomX = Float.random(in: -randomSpread...randomSpread)
+        let randomZ = Float.random(in: -randomSpread...randomSpread)
 
-        // Deck is at position 1 (bottom, z=0.41)
-        // Side 2 (left): medium distance (~0.7m left + 0.4m forward)
-        // Side 3 (top): farthest distance (~0.8m forward)
-        // Side 4 (right): medium distance (~0.7m right + 0.4m forward)
-        // Side 1 (bottom): very close, just drop straight down
-
-        // Target the CENTER of each side - cards will stack on the same spot
         let targetX: Float
         let targetZ: Float
 
-        // Add very small random variation to encourage stacking/sliding
-        let randomX = Float.random(in: -0.015...0.015)  // Reduced from 0.03
-        let randomZ = Float.random(in: -0.015...0.015)  // Reduced from 0.03
-
         switch sideIndex {
-        case 1: // Bottom side (closest to viewer) - near deck, just drop
+        case 1:
             targetX = 0.0 + randomX
-            targetZ = 0.35 + randomZ  // Very close to deck
-        case 2: // Left side - medium distance
-            targetX = -0.55 + randomX  // Left edge
-            targetZ = 0.0 + randomZ  // Center vertically
-        case 3: // Top side (far from viewer) - farthest distance
-            targetX = 0.0 + randomX  // Center horizontally
-            targetZ = -0.35 + randomZ  // Top edge (farthest)
-        case 4: // Right side - medium distance
-            targetX = 0.55 + randomX  // Right edge
-            targetZ = 0.0 + randomZ  // Center vertically
+            targetZ = 0.35 + randomZ
+        case 2:
+            targetX = -0.55 + randomX
+            targetZ = 0.0 + randomZ
+        case 3:
+            targetX = 0.0 + randomX
+            targetZ = -0.35 + randomZ
+        case 4:
+            targetX = 0.55 + randomX
+            targetZ = 0.0 + randomZ
         default:
             targetX = 0
             targetZ = 0
         }
 
-        // Calculate toss velocity based on distance to target
         let startPos = card.position
         let targetPos = SIMD3<Float>(targetX, 0.008, targetZ)
         let horizontalDirection = SIMD3<Float>(
@@ -465,28 +493,27 @@ public struct CardPhysicsScene: View {
         )
         let horizontalDistance = length(horizontalDirection)
 
-        // Adjust speed based on target side
         let horizontalSpeed: Float
         let upwardVelocity: Float
         let spinIntensity: Float
 
         switch sideIndex {
-        case 1: // Bottom - minimal slide off deck
-            horizontalSpeed = 0.4  // Gentle push (minimal slide)
-            upwardVelocity = 0.15  // Low arc, mostly slide
-            spinIntensity = 0.5    // Less spin
-        case 2: // Left - medium distance, moderate throw
-            horizontalSpeed = 1.1  // Moderate-strong speed
-            upwardVelocity = 0.4   // Medium arc
-            spinIntensity = 1.0    // Moderate spin
-        case 3: // Top - farthest, needs most speed
-            horizontalSpeed = 1.4  // Strongest throw
-            upwardVelocity = 0.5   // High arc
-            spinIntensity = 1.5    // More spin
-        case 4: // Right - same as left (medium distance)
-            horizontalSpeed = 1.1  // Same as side 2
-            upwardVelocity = 0.4   // Medium arc
-            spinIntensity = 1.0    // Moderate spin
+        case 1:
+            horizontalSpeed = 0.4
+            upwardVelocity = 0.15
+            spinIntensity = 0.5
+        case 2:
+            horizontalSpeed = 1.1
+            upwardVelocity = 0.4
+            spinIntensity = 1.0
+        case 3:
+            horizontalSpeed = 1.4
+            upwardVelocity = 0.5
+            spinIntensity = 1.5
+        case 4:
+            horizontalSpeed = 1.1
+            upwardVelocity = 0.4
+            spinIntensity = 1.0
         default:
             horizontalSpeed = 0.0
             upwardVelocity = 0.0
@@ -497,7 +524,6 @@ public struct CardPhysicsScene: View {
             ? normalize(horizontalDirection) * horizontalSpeed
             : SIMD3<Float>(0, 0, 0)
 
-        // Set initial velocity using PhysicsMotionComponent
         var motion = PhysicsMotionComponent()
         motion.linearVelocity = SIMD3<Float>(
             horizontalVelocity.x,
@@ -505,12 +531,9 @@ public struct CardPhysicsScene: View {
             horizontalVelocity.z
         )
 
-        // Add rotation during flight - scaled by spin intensity
         let ySpinAmount: Float = Float.random(in: 1.5...2.5) * spinIntensity
         let xTumbleAmount: Float = Float.random(in: -0.5...0.5) * spinIntensity
         let zTumbleAmount: Float = Float.random(in: -0.5...0.5) * spinIntensity
-
-        // Determine spin direction based on target side
         let spinDirection: Float = (sideIndex == 2 || sideIndex == 1) ? -1.0 : 1.0
 
         motion.angularVelocity = [
@@ -522,27 +545,79 @@ public struct CardPhysicsScene: View {
         card.components[PhysicsMotionComponent.self] = motion
     }
 
-    public func pickUpCard(index: Int) async {
-        guard index < cards.count else { return }
-        let card = cards[index]
+    public func gatherAndPickUp(corner: GatherCorner) async {
+        guard !cards.isEmpty else { return }
 
-        // Move card up slightly
-        var newPos = card.position
-        newPos.y += 0.05
+        // Calculate corner position based on table dimensions
+        // tableWidth=1.4, tableDepth=1.0, rail=0.07
+        let cornerPosition: SIMD3<Float>
+        switch corner {
+        case .bottomLeft:
+            cornerPosition = SIMD3<Float>(-0.55, 0.008, 0.38)
+        case .topLeft:
+            cornerPosition = SIMD3<Float>(-0.55, 0.008, -0.38)
+        case .topRight:
+            cornerPosition = SIMD3<Float>(0.55, 0.008, -0.38)
+        case .bottomRight:
+            cornerPosition = SIMD3<Float>(0.55, 0.008, 0.38)
+        }
 
-        await withCheckedContinuation { continuation in
+        // Phase 1 - Gather: slide all cards to the corner
+        for (index, card) in cards.enumerated() {
+            // Switch to kinematic mode for scripted animation
+            if var physicsBody = card.components[PhysicsBodyComponent.self] {
+                physicsBody.mode = .kinematic
+                card.components[PhysicsBodyComponent.self] = physicsBody
+            }
+            // Remove any existing motion
+            card.components[PhysicsMotionComponent.self] = nil
+
+            let stackY = cornerPosition.y + Float(index) * 0.001
+            let target = SIMD3<Float>(cornerPosition.x, stackY, cornerPosition.z)
+
             card.move(
                 to: Transform(
                     scale: card.scale,
-                    rotation: card.orientation,
-                    translation: newPos
+                    rotation: simd_quatf(angle: .pi, axis: [1, 0, 0]),
+                    translation: target
                 ),
                 relativeTo: nil,
-                duration: settings.pickUpDuration,
-                timingFunction: .easeOut
+                duration: 0.4,
+                timingFunction: .easeInOut
             )
-            continuation.resume()
         }
+
+        // Wait for gather animation to complete
+        try? await Task.sleep(for: .seconds(0.4))
+
+        // Phase 2 - Visual pause
+        try? await Task.sleep(for: .seconds(0.3))
+
+        // Phase 3 - Pick up: lift the stack upward then remove
+        for (index, card) in cards.enumerated() {
+            let stackY = cornerPosition.y + Float(index) * 0.001 + 0.15
+            let liftTarget = SIMD3<Float>(cornerPosition.x, stackY, cornerPosition.z)
+
+            card.move(
+                to: Transform(
+                    scale: card.scale,
+                    rotation: simd_quatf(angle: .pi, axis: [1, 0, 0]),
+                    translation: liftTarget
+                ),
+                relativeTo: nil,
+                duration: 0.3,
+                timingFunction: .easeIn
+            )
+        }
+
+        // Wait for lift animation to complete
+        try? await Task.sleep(for: .seconds(0.3))
+
+        // Remove cards from scene
+        for card in cards {
+            card.removeFromParent()
+        }
+        cards.removeAll()
     }
 
     public func resetCards() {
