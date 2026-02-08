@@ -9,7 +9,8 @@
       "Bash(gh repo edit:*)",
       "Bash(git push:*)",
       "Bash(gh issue create:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git mv:*)"
     ]
   }
 }
