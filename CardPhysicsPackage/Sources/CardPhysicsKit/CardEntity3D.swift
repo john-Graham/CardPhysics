@@ -17,46 +17,44 @@ enum CardEntity3D {
         enableTap: Bool = false,
         curvature: Float = 0.0
     ) -> ModelEntity {
-        let mesh: MeshResource
-        if curvature > 0 {
-            mesh = CurvedCardMesh.mesh(curvature: curvature)
-        } else {
-            mesh = MeshResource.generateBox(
-                width: cardWidth,
-                height: cardHeight,
-                depth: cardDepth,
-                cornerRadius: cornerRadius
-            )
+        // Always use CurvedCardMesh — at curvature 0 it produces a flat mesh
+        let mesh = CurvedCardMesh.mesh(curvature: curvature)
+
+        // Shared PBR properties for both materials
+        func makeBaseMaterial() -> PhysicallyBasedMaterial {
+            var material = PhysicallyBasedMaterial()
+            material.roughness = .init(floatLiteral: 0.5)
+            material.metallic = .init(floatLiteral: 0.0)
+            material.specular = .init(floatLiteral: 0.4)
+            material.clearcoat = .init(floatLiteral: 0.8)
+            material.clearcoatRoughness = .init(floatLiteral: 0.1)
+            material.opacityThreshold = 0.5
+            return material
         }
-
-        var material = PhysicallyBasedMaterial()
-        // Paper isn't purely rough, it has a sheen
-        material.roughness = .init(floatLiteral: 0.5)
-        material.metallic = .init(floatLiteral: 0.0)
-        // Specular highlight for the plastic coating
-        material.specular = .init(floatLiteral: 0.4)
-        
-        // PBR: Clearcoat for the plastic finish on cards
-        material.clearcoat = .init(floatLiteral: 0.8)
-        material.clearcoatRoughness = .init(floatLiteral: 0.1)
-
-        material.opacityThreshold = 0.5
 
         let texGen = CardTextureGenerator.shared
-        if faceUp, let tex = texGen.texture(for: card) {
-            material.baseColor = .init(texture: .init(tex))
-        } else if let backTex = texGen.backTexture() {
-            material.baseColor = .init(texture: .init(backTex))
+
+        // Material 0 → descriptor 0 (+Y face, visible when face-down) = card back
+        var backMaterial = makeBaseMaterial()
+        if let backTex = texGen.backTexture() {
+            backMaterial.baseColor = .init(texture: .init(backTex))
         } else {
-            // Fallback tint: cream for face, maroon for back
-            material.baseColor = .init(
-                tint: faceUp
-                    ? .init(red: 0.96, green: 0.94, blue: 0.90, alpha: 1.0)
-                    : .init(red: 0.55, green: 0.08, blue: 0.10, alpha: 1.0)
+            backMaterial.baseColor = .init(
+                tint: .init(red: 0.55, green: 0.08, blue: 0.10, alpha: 1.0)
             )
         }
 
-        let entity = ModelEntity(mesh: mesh, materials: [material])
+        // Material 1 → descriptor 1 (-Y face, visible when flipped face-up) = card face
+        var faceMaterial = makeBaseMaterial()
+        if let faceTex = texGen.texture(for: card) {
+            faceMaterial.baseColor = .init(texture: .init(faceTex))
+        } else {
+            faceMaterial.baseColor = .init(
+                tint: .init(red: 0.96, green: 0.94, blue: 0.90, alpha: 1.0)
+            )
+        }
+
+        let entity = ModelEntity(mesh: mesh, materials: [backMaterial, faceMaterial])
         entity.name = "card_\(card.suit.name)_\(card.rank.name)"
 
         // Always add collision component for cards
@@ -71,19 +69,16 @@ enum CardEntity3D {
         var physicsBody = PhysicsBodyComponent(
             massProperties: .default,
             material: .generate(
-                staticFriction: 0.25,  // Reduced to help cards slide on each other
-                dynamicFriction: 0.2,  // Reduced to help cards slide on each other
-                restitution: 0.05  // Very low bounce for better stacking
+                staticFriction: 0.25,
+                dynamicFriction: 0.2,
+                restitution: 0.05
             ),
-            mode: .kinematic  // Start in kinematic mode for scripted animations
+            mode: .kinematic
         )
 
-        // Enable CCD (Continuous Collision Detection) to prevent thin cards from tunneling
         physicsBody.isContinuousCollisionDetectionEnabled = true
-
-        // Set minimal damping to help cards settle when stacking
-        physicsBody.linearDamping = 0.1  // Very slight linear damping
-        physicsBody.angularDamping = 0.3  // Light angular damping to help cards settle flat
+        physicsBody.linearDamping = 0.1
+        physicsBody.angularDamping = 0.3
 
         entity.components.set(physicsBody)
 

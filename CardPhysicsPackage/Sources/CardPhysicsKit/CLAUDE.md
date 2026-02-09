@@ -62,7 +62,7 @@ The main 3D scene. Uses `RealityView` to set up and manage the physics world.
 2. Camera: `PerspectiveCameraComponent` (FOV 72, near 0.005, far 25.0)
 3. Table: wood base (1.4m x 1.0m), 4 rails (0.07m thick, static physics), green felt surface (static physics, friction 0.5/0.4)
 4. Lighting: HDRI `room_bg` from `Bundle.module`, fallback 3-point lighting (main spot 400, fill point 150, rim spot 300)
-5. Deck: 12 cards (Euchre deck sample) stacked face-down at position [0, y, 0.41]
+5. Deck: 12 cards (Euchre deck sample) stacked face-down at position [0, y, 0.55] (past the bottom rail)
 6. Coordinator action wiring (dealCardsAction, pickUpCardAction, resetCardsAction)
 7. When `settings.enableCardTapGesture` is true, each card gets `InputTargetComponent` + `GestureComponent(TapGesture)` for tap-to-flip
 
@@ -76,7 +76,7 @@ The main 3D scene. Uses `RealityView` to set up and manage the physics world.
 - `flipCard(_:)` -- (iOS 26 GestureComponent) flips a card 180 degrees around X axis with 0.25s animation; detects current face via quaternion, temporarily switches to kinematic, restores dynamic after flip
 - `resetCards()` -- removes all cards, recreates deck
 
-**Deal pattern**: cycles sides [2, 3, 4, 1] (left, top, right, bottom). Side-dependent speed: side 1 gentle (0.4 horizontal, 0.15 up), sides 2/4 moderate (1.1, 0.4), side 3 strongest (1.4, 0.5).
+**Deal pattern**: cycles sides [2, 3, 4, 1] (left, top, right, bottom). Side-dependent speed: side 1 flat and fast (0.5 horizontal, 0.0 up), sides 2/4 moderate (1.1, 0.4), side 3 strongest with reduced spin for stacking (1.4, 0.35, spin 0.8). Fixed 0.3s gap between each card.
 
 ### CardPhysicsView.swift -- SwiftUI Wrapper
 `@MainActor public struct CardPhysicsView: View`

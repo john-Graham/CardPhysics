@@ -225,9 +225,8 @@ public struct CardPhysicsScene: View {
         // DEBUG: Add position labels to each side of the table
         addDebugLabels(to: tableRoot, tableWidth: tableWidth, tableDepth: tableDepth)
 
-        // Set deck position marker near position 1 (bottom of table, closest to viewer)
-        // Position at z=0.41 - confirmed correct viewing position
-        deckPosition.position = SIMD3<Float>(0.0, 0.0052, 0.41)
+        // Set deck position marker past the bottom rail, closest to viewer
+        deckPosition.position = SIMD3<Float>(0.0, 0.0052, 0.55)
         rootEntity.addChild(deckPosition)
     }
 
@@ -417,7 +416,7 @@ public struct CardPhysicsScene: View {
         // Deal cards one at a time, cycling through sides 2, 3, 4, 1
         for (dealIndex, cardIndex) in cards.indices.reversed().enumerated() {
             let card = cards[cardIndex]
-            await dealSingleCard(card, toSide: [2, 3, 4, 1][dealIndex % 4], delay: Double(dealIndex) * 0.3)
+            await dealSingleCard(card, toSide: [2, 3, 4, 1][dealIndex % 4], delay: dealIndex == 0 ? 0.0 : 0.3)
         }
     }
 
@@ -447,7 +446,7 @@ public struct CardPhysicsScene: View {
                 await dealSingleCard(
                     card,
                     toSide: bundle.side,
-                    delay: Double(offsetInBundle) * 0.05,
+                    delay: offsetInBundle == 0 ? 0.0 : 0.05,
                     randomSpread: 0.025
                 )
             }
@@ -508,8 +507,8 @@ public struct CardPhysicsScene: View {
 
         switch sideIndex {
         case 1:
-            horizontalSpeed = 0.4
-            upwardVelocity = 0.15
+            horizontalSpeed = 0.5
+            upwardVelocity = 0.0
             spinIntensity = 0.5
         case 2:
             horizontalSpeed = 1.1
@@ -517,8 +516,8 @@ public struct CardPhysicsScene: View {
             spinIntensity = 1.0
         case 3:
             horizontalSpeed = 1.4
-            upwardVelocity = 0.5
-            spinIntensity = 1.5
+            upwardVelocity = 0.35
+            spinIntensity = 0.8
         case 4:
             horizontalSpeed = 1.1
             upwardVelocity = 0.4
