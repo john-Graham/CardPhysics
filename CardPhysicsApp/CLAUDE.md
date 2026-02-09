@@ -33,7 +33,7 @@ CardPhysicsApp is an iOS application that demonstrates realistic 3D card physics
 
 ### Deck Configuration
 - **12 cards total** -- 3 rounds to each of 4 sides
-- **Deck position**: Bottom of table (side 1) at z=0.41, x=0
+- **Deck position**: Past the bottom rail (side 1) at z=0.55, x=0
 - **Initial height**: 5x deck thickness (82.5mm above table)
   - Stack offset: 1.5mm between cards
   - Base height: max(15mm, deck_thickness x 5)
@@ -45,9 +45,9 @@ Cards are thrown with varying speeds based on target distance:
 
 | Side | Horizontal | Upward | Spin Intensity |
 |------|-----------|--------|----------------|
-| 1 (Bottom, near deck) | 0.4 m/s | 0.15 m/s | 0.5 |
+| 1 (Bottom, near deck) | 0.5 m/s | 0.0 m/s | 0.5 |
 | 2 (Left, medium) | 1.1 m/s | 0.4 m/s | 1.0 |
-| 3 (Top, farthest) | 1.4 m/s | 0.5 m/s | 1.5 |
+| 3 (Top, farthest) | 1.4 m/s | 0.35 m/s | 0.8 |
 | 4 (Right, medium) | 1.1 m/s | 0.4 m/s | 1.0 |
 
 ### Rotation During Flight
