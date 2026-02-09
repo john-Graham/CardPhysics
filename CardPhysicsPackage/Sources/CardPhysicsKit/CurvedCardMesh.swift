@@ -15,6 +15,8 @@ enum CurvedCardMesh {
 
     // MARK: - Mesh Generation
 
+    /// Generates a two-part mesh: descriptor 0 = front face (material index 0),
+    /// descriptor 1 = back face + edges (material index 1).
     private static func generateMesh(curvature: Float) -> MeshResource {
         let width = CardEntity3D.cardWidth
         let height = CardEntity3D.cardHeight
@@ -26,15 +28,8 @@ enum CurvedCardMesh {
         let xSegs = 16
         let zSegs = 1
 
-        // Front and back grids
         let xCount = xSegs + 1  // 17
-        let zCount = zSegs + 1  // 2
-        let gridVerts = xCount * zCount  // 34 per face
-
-        var positions: [SIMD3<Float>] = []
-        var normals: [SIMD3<Float>] = []
-        var uvs: [SIMD2<Float>] = []
-        var indices: [UInt32] = []
+        // let zCount = zSegs + 1  // 2 (unused but kept for reference)
 
         // Helper: parabolic displacement at normalized x (-1..1)
         func bow(_ nx: Float) -> Float {
@@ -42,48 +37,64 @@ enum CurvedCardMesh {
         }
 
         // Helper: normal from parabola derivative
-        // dy/dx = curvature * -2 * nx * (2/width)
-        // Tangent along X at this point: (1, dy/dx_world, 0)
-        // Normal = cross(tangentX, tangentZ) for front face
         func frontNormal(_ nx: Float) -> SIMD3<Float> {
             let dydx = -curvature * (-2.0 * nx) * (2.0 / width)
             let tangentX = SIMD3<Float>(1, dydx, 0)
-            let tangentZ = SIMD3<Float>(0, 0, -1) // along -Z for front face
+            let tangentZ = SIMD3<Float>(0, 0, -1)
             let n = simd_normalize(simd_cross(tangentZ, tangentX))
             return n
         }
 
-        // --- Front face (+Y side) ---
-        let frontStart = UInt32(positions.count)
+        // =====================================================================
+        // DESCRIPTOR 0: Front face only (material index 0 = card face texture)
+        // =====================================================================
+        var frontPositions: [SIMD3<Float>] = []
+        var frontNormals: [SIMD3<Float>] = []
+        var frontUVs: [SIMD2<Float>] = []
+        var frontIndices: [UInt32] = []
+
         for zi in 0...zSegs {
             let nz = Float(zi) / Float(zSegs)
             let z = -halfD + nz * depth
             for xi in 0...xSegs {
                 let nx = Float(xi) / Float(xSegs)
                 let x = -halfW + nx * width
-                let nxNorm = (2.0 * nx - 1.0) // -1..1
+                let nxNorm = (2.0 * nx - 1.0)
                 let y = halfH + bow(nxNorm)
 
-                positions.append(SIMD3<Float>(x, y, z))
-                normals.append(frontNormal(nxNorm))
-                uvs.append(SIMD2<Float>(nx, 1.0 - nz))
+                frontPositions.append(SIMD3<Float>(x, y, z))
+                frontNormals.append(frontNormal(nxNorm))
+                frontUVs.append(SIMD2<Float>(nx, 1.0 - nz))
             }
         }
 
         // Front face triangles (counter-clockwise when viewed from +Y)
         for zi in 0..<zSegs {
             for xi in 0..<xSegs {
-                let tl = frontStart + UInt32(zi * xCount + xi)
+                let tl = UInt32(zi * xCount + xi)
                 let tr = tl + 1
-                let bl = frontStart + UInt32((zi + 1) * xCount + xi)
+                let bl = UInt32((zi + 1) * xCount + xi)
                 let br = bl + 1
-                // Two triangles per quad — CCW winding for outward +Y normal
-                indices.append(contentsOf: [tl, bl, tr, tr, bl, br])
+                frontIndices.append(contentsOf: [tl, bl, tr, tr, bl, br])
             }
         }
 
+        var frontDescriptor = MeshDescriptor(name: "cardFront")
+        frontDescriptor.positions = MeshBuffers.Positions(frontPositions)
+        frontDescriptor.normals = MeshBuffers.Normals(frontNormals)
+        frontDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(frontUVs)
+        frontDescriptor.primitives = .triangles(frontIndices)
+
+        // =====================================================================
+        // DESCRIPTOR 1: Back face + edges (material index 1 = card back texture)
+        // =====================================================================
+        var backPositions: [SIMD3<Float>] = []
+        var backNormals: [SIMD3<Float>] = []
+        var backUVs: [SIMD2<Float>] = []
+        var backIndices: [UInt32] = []
+
         // --- Back face (-Y side) ---
-        let backStart = UInt32(positions.count)
+        let backFaceStart = UInt32(backPositions.count)
         for zi in 0...zSegs {
             let nz = Float(zi) / Float(zSegs)
             let z = -halfD + nz * depth
@@ -93,22 +104,22 @@ enum CurvedCardMesh {
                 let nxNorm = (2.0 * nx - 1.0)
                 let y = -halfH + bow(nxNorm)
 
-                positions.append(SIMD3<Float>(x, y, z))
+                backPositions.append(SIMD3<Float>(x, y, z))
                 let n = frontNormal(nxNorm)
-                normals.append(-n) // flipped for back face
+                backNormals.append(-n) // flipped for back face
                 // Mirror UVs horizontally for back face
-                uvs.append(SIMD2<Float>(1.0 - nx, 1.0 - nz))
+                backUVs.append(SIMD2<Float>(1.0 - nx, 1.0 - nz))
             }
         }
 
         // Back face triangles (reversed winding)
         for zi in 0..<zSegs {
             for xi in 0..<xSegs {
-                let tl = backStart + UInt32(zi * xCount + xi)
+                let tl = backFaceStart + UInt32(zi * xCount + xi)
                 let tr = tl + 1
-                let bl = backStart + UInt32((zi + 1) * xCount + xi)
+                let bl = backFaceStart + UInt32((zi + 1) * xCount + xi)
                 let br = bl + 1
-                indices.append(contentsOf: [tl, tr, bl, bl, tr, br])
+                backIndices.append(contentsOf: [tl, tr, bl, bl, tr, br])
             }
         }
 
@@ -116,44 +127,43 @@ enum CurvedCardMesh {
 
         // Top edge (zi=0, z = -halfD) — curved along X
         addCurvedEdgeStrip(
-            positions: &positions, normals: &normals, uvs: &uvs, indices: &indices,
+            positions: &backPositions, normals: &backNormals, uvs: &backUVs, indices: &backIndices,
             xSegs: xSegs, width: width, halfW: halfW, halfH: halfH,
             z: -halfD, edgeNormalZ: -1.0, curvature: curvature
         )
 
         // Bottom edge (zi=zSegs, z = +halfD) — curved along X
         addCurvedEdgeStrip(
-            positions: &positions, normals: &normals, uvs: &uvs, indices: &indices,
+            positions: &backPositions, normals: &backNormals, uvs: &backUVs, indices: &backIndices,
             xSegs: xSegs, width: width, halfW: halfW, halfH: halfH,
             z: halfD, edgeNormalZ: 1.0, curvature: curvature
         )
 
         // Left edge (xi=0, x = -halfW) — simple quad (no bow at edges)
         addSideEdgeQuad(
-            positions: &positions, normals: &normals, uvs: &uvs, indices: &indices,
+            positions: &backPositions, normals: &backNormals, uvs: &backUVs, indices: &backIndices,
             x: -halfW, halfH: halfH, halfD: halfD, edgeNormalX: -1.0,
-            bowDisplacement: 0.0 // edges have zero bow
+            bowDisplacement: 0.0
         )
 
         // Right edge (xi=xSegs, x = +halfW) — simple quad
         addSideEdgeQuad(
-            positions: &positions, normals: &normals, uvs: &uvs, indices: &indices,
+            positions: &backPositions, normals: &backNormals, uvs: &backUVs, indices: &backIndices,
             x: halfW, halfH: halfH, halfD: halfD, edgeNormalX: 1.0,
             bowDisplacement: 0.0
         )
 
-        var descriptor = MeshDescriptor(name: "curvedCard")
-        descriptor.positions = MeshBuffers.Positions(positions)
-        descriptor.normals = MeshBuffers.Normals(normals)
-        descriptor.textureCoordinates = MeshBuffers.TextureCoordinates(uvs)
-        descriptor.primitives = .triangles(indices)
+        var backDescriptor = MeshDescriptor(name: "cardBackAndEdges")
+        backDescriptor.positions = MeshBuffers.Positions(backPositions)
+        backDescriptor.normals = MeshBuffers.Normals(backNormals)
+        backDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(backUVs)
+        backDescriptor.primitives = .triangles(backIndices)
 
+        // Generate mesh with two descriptors — RealityKit maps descriptor order to material indices
         do {
-            return try MeshResource.generate(from: [descriptor])
+            return try MeshResource.generate(from: [frontDescriptor, backDescriptor])
         } catch {
-            // If mesh generation fails, log error and create a simple fallback mesh
             print("⚠️ Failed to generate curved card mesh: \(error). Using fallback.")
-            // Generate a simple flat quad as fallback
             return MeshResource.generatePlane(width: width, depth: height)
         }
     }
@@ -176,8 +186,6 @@ enum CurvedCardMesh {
     ) {
         let start = UInt32(positions.count)
         let normal = SIMD3<Float>(0, 0, edgeNormalZ)
-        // Match front face UV y: at z=-halfD (edgeNormalZ<0) → UV y=1.0, at z=+halfD → UV y=0.0
-        // Both vertices share the same UV y so the rounded-corner alpha mask clips edges at corners
         let edgeUVy: Float = edgeNormalZ < 0 ? 1.0 : 0.0
 
         for xi in 0...(xSegs) {
@@ -207,10 +215,8 @@ enum CurvedCardMesh {
             let b1 = nextCol + 1 // bottom-right
 
             if edgeNormalZ < 0 {
-                // -Z edge: face outward
                 indices.append(contentsOf: [t0, t1, b0, b0, t1, b1])
             } else {
-                // +Z edge: face outward
                 indices.append(contentsOf: [t0, b0, t1, t1, b0, b1])
             }
         }
@@ -231,8 +237,6 @@ enum CurvedCardMesh {
         let start = UInt32(positions.count)
         let normal = SIMD3<Float>(edgeNormalX, 0, 0)
 
-        // Four corners of the side edge quad
-        // Front-top, front-bottom, back-top, back-bottom
         let topY = halfH + bowDisplacement
         let botY = -halfH + bowDisplacement
 
@@ -242,20 +246,15 @@ enum CurvedCardMesh {
         positions.append(SIMD3<Float>(x, botY, halfD))   // 3: back-bottom
 
         for _ in 0..<4 { normals.append(normal) }
-        // UV x = edge column of texture (0 for left edge, 1 for right edge)
-        // UV y maps along Z to match front face mapping (1.0 at z=-halfD, 0.0 at z=+halfD)
-        // This ensures the rounded-corner alpha mask clips the edge at corners
         let u: Float = edgeNormalX < 0 ? 0 : 1
         uvs.append(contentsOf: [
-            SIMD2<Float>(u, 1), SIMD2<Float>(u, 1),  // front (z=-halfD)
-            SIMD2<Float>(u, 0), SIMD2<Float>(u, 0),  // back  (z=+halfD)
+            SIMD2<Float>(u, 1), SIMD2<Float>(u, 1),
+            SIMD2<Float>(u, 0), SIMD2<Float>(u, 0),
         ])
 
         if edgeNormalX < 0 {
-            // Left edge: outward winding
             indices.append(contentsOf: [start, start + 2, start + 1, start + 1, start + 2, start + 3])
         } else {
-            // Right edge: outward winding
             indices.append(contentsOf: [start, start + 1, start + 2, start + 2, start + 1, start + 3])
         }
     }
