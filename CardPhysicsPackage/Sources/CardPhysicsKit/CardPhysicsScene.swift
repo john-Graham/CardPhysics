@@ -5,6 +5,7 @@ import RealityKit
 public struct CardPhysicsScene: View {
     @State private var rootEntity = Entity()
     @State private var cards: [Entity] = []
+    @State private var cardSideAssignments: [ObjectIdentifier: Int] = [:]
     @State private var deckPosition = Entity()
 
     public let settings: PhysicsSettings
@@ -402,6 +403,7 @@ public struct CardPhysicsScene: View {
         // Remove existing cards and create correct count for this mode
         for card in cards { card.removeFromParent() }
         cards.removeAll()
+        cardSideAssignments.removeAll()
         createDeck(count: mode.cardCount)
 
         switch mode {
@@ -410,6 +412,10 @@ public struct CardPhysicsScene: View {
         case .four, .twelve, .twenty:
             await dealCardsStandard()
         }
+
+        // Wait for physics to settle, then stack cards neatly
+        try? await Task.sleep(for: .seconds(2.0))
+        await stackCardsBySide()
     }
 
     private func dealCardsStandard() async {
@@ -551,6 +557,65 @@ public struct CardPhysicsScene: View {
         ]
 
         card.components[PhysicsMotionComponent.self] = motion
+        cardSideAssignments[ObjectIdentifier(card)] = sideIndex
+    }
+
+    private func stackCardsBySide() async {
+        guard !cards.isEmpty else { return }
+
+        // Group cards by their assigned side
+        var sideCards: [Int: [Entity]] = [:]
+        for card in cards {
+            let side = cardSideAssignments[ObjectIdentifier(card)] ?? 1
+            sideCards[side, default: []].append(card)
+        }
+
+        // Stack center positions for each side
+        let sidePositions: [Int: SIMD3<Float>] = [
+            1: [0, 0.008, 0.35],
+            2: [-0.55, 0.008, 0],
+            3: [0, 0.008, -0.35],
+            4: [0.55, 0.008, 0]
+        ]
+
+        // Y-axis rotation so cards face their player
+        let sideRotations: [Int: simd_quatf] = [
+            1: simd_quatf(angle: .pi, axis: [1, 0, 0]),                                                          // face-up, facing bottom
+            2: simd_quatf(angle: .pi, axis: [1, 0, 0]) * simd_quatf(angle: .pi / 2, axis: [0, 1, 0]),           // face-up, rotated to face left
+            3: simd_quatf(angle: .pi, axis: [1, 0, 0]) * simd_quatf(angle: .pi, axis: [0, 1, 0]),               // face-up, facing top
+            4: simd_quatf(angle: .pi, axis: [1, 0, 0]) * simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])          // face-up, rotated to face right
+        ]
+
+        for (side, cardsInSide) in sideCards {
+            guard let basePos = sidePositions[side],
+                  let rotation = sideRotations[side] else { continue }
+
+            for (index, card) in cardsInSide.enumerated() {
+                // Switch to kinematic for scripted animation
+                if var physicsBody = card.components[PhysicsBodyComponent.self] {
+                    physicsBody.mode = .kinematic
+                    card.components[PhysicsBodyComponent.self] = physicsBody
+                }
+                card.components[PhysicsMotionComponent.self] = nil
+
+                let stackY = basePos.y + Float(index) * 0.001
+                let target = SIMD3<Float>(basePos.x, stackY, basePos.z)
+
+                card.move(
+                    to: Transform(
+                        scale: card.scale,
+                        rotation: rotation,
+                        translation: target
+                    ),
+                    relativeTo: nil,
+                    duration: 0.4,
+                    timingFunction: .easeInOut
+                )
+            }
+        }
+
+        // Wait for stack animation to complete
+        try? await Task.sleep(for: .seconds(0.4))
     }
 
     public func gatherAndPickUp(corner: GatherCorner) async {
@@ -626,6 +691,7 @@ public struct CardPhysicsScene: View {
             card.removeFromParent()
         }
         cards.removeAll()
+        cardSideAssignments.removeAll()
     }
 
     /// Flips a card 180 degrees around the X axis with a short animation.
@@ -685,6 +751,7 @@ public struct CardPhysicsScene: View {
             card.removeFromParent()
         }
         cards.removeAll()
+        cardSideAssignments.removeAll()
         createDeck()
     }
 }
