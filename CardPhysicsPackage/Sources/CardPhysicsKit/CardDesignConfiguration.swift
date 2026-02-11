@@ -6,6 +6,8 @@ public enum CardFaceStyle: String, CaseIterable, Codable, Sendable {
     case modern
     case minimal
     case bold
+    case bicycle
+    case french
     case customImage
     case selfie
 
@@ -15,6 +17,8 @@ public enum CardFaceStyle: String, CaseIterable, Codable, Sendable {
         case .modern: return "Modern"
         case .minimal: return "Minimal"
         case .bold: return "Bold"
+        case .bicycle: return "Bicycle"
+        case .french: return "French"
         case .customImage: return "Photo"
         case .selfie: return "Selfie"
         }
@@ -26,6 +30,8 @@ public enum CardFaceStyle: String, CaseIterable, Codable, Sendable {
         case .modern: return "rectangle.portrait.fill"
         case .minimal: return "square"
         case .bold: return "rectangle.portrait.inset.filled"
+        case .bicycle: return "suit.club.fill"
+        case .french: return "suit.spade.fill"
         case .customImage: return "photo"
         case .selfie: return "camera"
         }
@@ -33,7 +39,7 @@ public enum CardFaceStyle: String, CaseIterable, Codable, Sendable {
 
     /// Styles that appear in the preset picker (not photo/selfie)
     public static var presets: [CardFaceStyle] {
-        [.classic, .modern, .minimal, .bold]
+        [.classic, .modern, .minimal, .bold, .bicycle, .french]
     }
 }
 

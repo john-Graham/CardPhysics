@@ -90,6 +90,10 @@ public struct CardView: View {
             minimalFront
         case .bold:
             boldFront
+        case .bicycle:
+            bicycleFront
+        case .french:
+            frenchFront
         case .customImage, .selfie:
             customImageOverlay
         }
@@ -292,6 +296,240 @@ public struct CardView: View {
             .padding(.trailing, size.width * 0.08)
             .padding(.bottom, size.height * 0.04)
         }
+    }
+
+    // MARK: Bicycle/Poker Style (Traditional US playing cards)
+
+    private var bicycleFront: some View {
+        ZStack {
+            // Pure white background like real playing cards
+            RoundedRectangle(cornerRadius: size.cornerRadius)
+                .fill(Color.white)
+
+            // Subtle border
+            RoundedRectangle(cornerRadius: size.cornerRadius)
+                .strokeBorder(
+                    Color(red: 0.85, green: 0.85, blue: 0.85),
+                    lineWidth: 1
+                )
+
+            // Traditional pip layout in center
+            pipLayout
+                .foregroundColor(suitColor)
+
+            // Corner indices: top-left
+            VStack(spacing: -3) {
+                Text(card.rank.symbol)
+                    .font(.system(size: size.fontSize * 0.5, weight: .bold, design: .serif))
+                Text(card.suit.rawValue)
+                    .font(.system(size: size.fontSize * 0.5))
+            }
+            .foregroundColor(suitColor)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.leading, size.width * 0.06)
+            .padding(.top, size.height * 0.03)
+
+            // Corner indices: bottom-right (rotated 180)
+            VStack(spacing: -3) {
+                Text(card.rank.symbol)
+                    .font(.system(size: size.fontSize * 0.5, weight: .bold, design: .serif))
+                Text(card.suit.rawValue)
+                    .font(.system(size: size.fontSize * 0.5))
+            }
+            .foregroundColor(suitColor)
+            .rotationEffect(.degrees(180))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .padding(.trailing, size.width * 0.06)
+            .padding(.bottom, size.height * 0.03)
+        }
+    }
+
+    // MARK: French Style (Classic European playing cards)
+
+    private var frenchFront: some View {
+        ZStack {
+            // Slightly off-white/ivory background
+            RoundedRectangle(cornerRadius: size.cornerRadius)
+                .fill(Color(red: 0.99, green: 0.98, blue: 0.96))
+
+            // Delicate border
+            RoundedRectangle(cornerRadius: size.cornerRadius)
+                .strokeBorder(suitColor.opacity(0.2), lineWidth: 1.5)
+
+            // Center pip layout (French cards are more minimalist)
+            pipLayoutFrench
+                .foregroundColor(suitColor)
+
+            // Corner indices with French-style serif font
+            VStack(spacing: -2) {
+                Text(card.rank.symbol)
+                    .font(.system(size: size.fontSize * 0.48, weight: .semibold, design: .serif))
+                Text(card.suit.rawValue)
+                    .font(.system(size: size.fontSize * 0.42))
+            }
+            .foregroundColor(suitColor)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.leading, size.width * 0.07)
+            .padding(.top, size.height * 0.035)
+
+            // Bottom-right corner
+            VStack(spacing: -2) {
+                Text(card.rank.symbol)
+                    .font(.system(size: size.fontSize * 0.48, weight: .semibold, design: .serif))
+                Text(card.suit.rawValue)
+                    .font(.system(size: size.fontSize * 0.42))
+            }
+            .foregroundColor(suitColor)
+            .rotationEffect(.degrees(180))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .padding(.trailing, size.width * 0.07)
+            .padding(.bottom, size.height * 0.035)
+        }
+    }
+
+    // MARK: - Pip Layouts (Traditional playing card pip patterns)
+
+    private var pipLayout: some View {
+        let pipSize = size.fontSize * 0.85
+        let spacing = size.height * 0.15
+
+        return Group {
+            switch card.rank.value {
+            case 9:
+                // 9: Classic 3x3 grid with center missing
+                VStack(spacing: spacing) {
+                    HStack(spacing: size.width * 0.25) {
+                        pip(size: pipSize)
+                        pip(size: pipSize)
+                    }
+                    HStack(spacing: size.width * 0.25) {
+                        pip(size: pipSize)
+                        pip(size: pipSize)
+                    }
+                    pip(size: pipSize)
+                    HStack(spacing: size.width * 0.25) {
+                        pip(size: pipSize)
+                        pip(size: pipSize)
+                    }
+                }
+
+            case 10:
+                // 10: Two columns with center pip
+                VStack(spacing: spacing * 0.7) {
+                    HStack(spacing: size.width * 0.25) {
+                        pip(size: pipSize)
+                        pip(size: pipSize)
+                    }
+                    pip(size: pipSize)
+                    HStack(spacing: size.width * 0.25) {
+                        pip(size: pipSize)
+                        pip(size: pipSize)
+                    }
+                    pip(size: pipSize, flipped: true)
+                    HStack(spacing: size.width * 0.25) {
+                        pip(size: pipSize, flipped: true)
+                        pip(size: pipSize, flipped: true)
+                    }
+                }
+
+            case 11, 12, 13:
+                // Jack, Queen, King: Letter only (no actual court card artwork)
+                VStack(spacing: 4) {
+                    Text(card.rank.symbol)
+                        .font(.system(size: size.fontSize * 2.2, weight: .bold, design: .serif))
+                    Text(card.suit.rawValue)
+                        .font(.system(size: size.fontSize * 1.2))
+                }
+
+            case 14:
+                // Ace: Single large centered pip
+                pip(size: size.fontSize * 2.0)
+
+            default:
+                // Fallback: centered rank + suit
+                VStack(spacing: 2) {
+                    Text(card.rank.symbol)
+                        .font(.system(size: size.fontSize * 1.2, weight: .bold))
+                    Text(card.suit.rawValue)
+                        .font(.system(size: size.fontSize * 1.4))
+                }
+            }
+        }
+    }
+
+    private var pipLayoutFrench: some View {
+        let pipSize = size.fontSize * 0.75
+        let spacing = size.height * 0.16
+
+        return Group {
+            switch card.rank.value {
+            case 9:
+                // French 9: Tighter spacing
+                VStack(spacing: spacing * 0.9) {
+                    HStack(spacing: size.width * 0.22) {
+                        pip(size: pipSize)
+                        pip(size: pipSize)
+                    }
+                    pip(size: pipSize)
+                    HStack(spacing: size.width * 0.22) {
+                        pip(size: pipSize)
+                        pip(size: pipSize)
+                    }
+                    pip(size: pipSize, flipped: true)
+                    HStack(spacing: size.width * 0.22) {
+                        pip(size: pipSize, flipped: true)
+                        pip(size: pipSize, flipped: true)
+                    }
+                }
+
+            case 10:
+                // French 10: Elegant vertical arrangement
+                VStack(spacing: spacing * 0.65) {
+                    HStack(spacing: size.width * 0.22) {
+                        pip(size: pipSize)
+                        pip(size: pipSize)
+                    }
+                    pip(size: pipSize)
+                    HStack(spacing: size.width * 0.22) {
+                        pip(size: pipSize)
+                        pip(size: pipSize)
+                    }
+                    pip(size: pipSize, flipped: true)
+                    HStack(spacing: size.width * 0.22) {
+                        pip(size: pipSize, flipped: true)
+                        pip(size: pipSize, flipped: true)
+                    }
+                }
+
+            case 11, 12, 13:
+                // French court cards: Elegant letter with suit
+                VStack(spacing: 3) {
+                    Text(card.rank.symbol)
+                        .font(.system(size: size.fontSize * 2.0, weight: .semibold, design: .serif))
+                    Text(card.suit.rawValue)
+                        .font(.system(size: size.fontSize * 1.1))
+                }
+
+            case 14:
+                // French Ace: Refined single pip
+                pip(size: size.fontSize * 1.8)
+
+            default:
+                VStack(spacing: 2) {
+                    Text(card.rank.symbol)
+                        .font(.system(size: size.fontSize * 1.1, weight: .semibold))
+                    Text(card.suit.rawValue)
+                        .font(.system(size: size.fontSize * 1.2))
+                }
+            }
+        }
+    }
+
+    /// Helper to draw a single suit pip
+    private func pip(size: CGFloat, flipped: Bool = false) -> some View {
+        Text(card.suit.rawValue)
+            .font(.system(size: size))
+            .rotationEffect(.degrees(flipped ? 180 : 0))
     }
 
     // MARK: - Card Back
