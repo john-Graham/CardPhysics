@@ -7,6 +7,9 @@ public struct CardPhysicsScene: View {
     @State private var cards: [Entity] = []
     @State private var cardSideAssignments: [ObjectIdentifier: Int] = [:]
     @State private var deckPosition = Entity()
+    @State private var lastRoomEnvironment: RoomEnvironment = .none
+    @State private var lastCustomRoomImageFilename: String = ""
+    @State private var lastRoomRotation: Double = 0.0
 
     public let settings: PhysicsSettings
     public let cameraPosition: SIMD3<Float>
@@ -39,6 +42,18 @@ public struct CardPhysicsScene: View {
             // Set up lighting with HDRI
             setupLighting()
 
+            // Create skybox if room environment is enabled
+            if settings.roomEnvironment != .none {
+                if let skybox = SkyboxEntity.makeSkybox(
+                    environment: settings.roomEnvironment,
+                    customImageFilename: settings.customRoomImageFilename,
+                    rotation: settings.roomRotation
+                ) {
+                    skybox.name = "skybox"
+                    rootEntity.addChild(skybox)
+                }
+            }
+
             // Create initial deck of cards
             createDeck()
 
@@ -57,6 +72,16 @@ public struct CardPhysicsScene: View {
             if let cameraEntity = rootEntity.findEntity(named: "camera") {
                 cameraEntity.position = cameraPosition
                 cameraEntity.look(at: cameraTarget, from: cameraPosition, relativeTo: nil)
+            }
+
+            // Update skybox if room settings changed
+            if settings.roomEnvironment != lastRoomEnvironment ||
+               settings.customRoomImageFilename != lastCustomRoomImageFilename ||
+               settings.roomRotation != lastRoomRotation {
+                updateSkybox()
+                lastRoomEnvironment = settings.roomEnvironment
+                lastCustomRoomImageFilename = settings.customRoomImageFilename
+                lastRoomRotation = settings.roomRotation
             }
         }
         .task {
@@ -353,6 +378,25 @@ public struct CardPhysicsScene: View {
         rimLight.look(at: [0, 0, 0], from: rimLight.position, relativeTo: nil)
         rimLight.name = "rimLight"
         rootEntity.addChild(rimLight)
+    }
+
+    private func updateSkybox() {
+        // Remove existing skybox
+        if let existingSkybox = rootEntity.findEntity(named: "skybox") {
+            existingSkybox.removeFromParent()
+        }
+
+        // Create and add new skybox if environment is not .none
+        if settings.roomEnvironment != .none {
+            if let skybox = SkyboxEntity.makeSkybox(
+                environment: settings.roomEnvironment,
+                customImageFilename: settings.customRoomImageFilename,
+                rotation: settings.roomRotation
+            ) {
+                skybox.name = "skybox"
+                rootEntity.addChild(skybox)
+            }
+        }
     }
 
     private func createDeck(count: Int = 12) {

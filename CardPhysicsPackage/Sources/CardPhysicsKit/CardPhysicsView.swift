@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import PhotosUI
 
 public enum DealMode: String, CaseIterable, Sendable {
     case four = "4 Cards"
@@ -365,10 +366,12 @@ struct SettingsPanel: View {
     @State private var dealExpanded = true
     @State private var pickUpExpanded = true
     @State private var designExpanded = true
+    @State private var roomExpanded = true
     @State private var showingFacePhotoPicker = false
     @State private var showingBackPhotoPicker = false
     @State private var showingFaceCamera = false
     @State private var showingBackCamera = false
+    @State private var showingRoomPhotoPicker = false
 
     private var designConfig: CardDesignConfiguration {
         CardTextureGenerator.shared.designConfig
@@ -520,6 +523,58 @@ struct SettingsPanel: View {
                         .padding(.top, 8)
                     } label: {
                         Text("Card Design")
+                            .font(.headline)
+                    }
+
+                    Divider()
+
+                    // Room Background
+                    DisclosureGroup(isExpanded: $roomExpanded) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            // Room thumbnails
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(RoomEnvironment.allCases, id: \.self) { room in
+                                        RoomThumbnail(
+                                            room: room,
+                                            isSelected: settings.roomEnvironment == room,
+                                            onSelect: {
+                                                settings.roomEnvironment = room
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Custom image import
+                            if settings.roomEnvironment == .customImage {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Custom Image")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+
+                                    RoomPhotoPicker { image in
+                                        handleRoomImageCapture(image)
+                                    }
+                                    .font(.caption2)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .glassEffect(.regular.tint(Color.blue.opacity(0.6)).interactive(), in: .rect(cornerRadius: 8))
+                                }
+                            }
+
+                            // Room rotation slider
+                            SliderSetting(
+                                label: "Rotation",
+                                value: $settings.roomRotation,
+                                range: 0...360,
+                                unit: "°"
+                            )
+                        }
+                        .padding(.top, 8)
+                    } label: {
+                        Text("Room Background")
                             .font(.headline)
                     }
 
@@ -789,6 +844,14 @@ struct SettingsPanel: View {
         designConfig.save()
         onDesignChanged()
     }
+
+    // MARK: - Room Image Handling
+
+    private func handleRoomImageCapture(_ image: UIImage) {
+        // TODO: This will be implemented when RoomImageStorage is available
+        // For now, we'll just set the filename to a placeholder
+        settings.customRoomImageFilename = "custom_room_\(UUID().uuidString).jpg"
+    }
 }
 
 struct PresetButton: View {
@@ -825,6 +888,130 @@ struct SliderSetting: View {
             }
 
             Slider(value: $value, in: range)
+        }
+    }
+}
+
+struct RoomThumbnail: View {
+    let room: RoomEnvironment
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(spacing: 4) {
+                // Thumbnail preview
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(thumbnailGradient)
+                    .frame(width: 80, height: 60)
+                    .overlay(
+                        Image(systemName: thumbnailIcon)
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.8))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
+                    )
+
+                // Label
+                Text(room.displayName)
+                    .font(.system(size: 10))
+                    .foregroundColor(.white)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 80)
+            }
+            .padding(6)
+            .glassEffect(
+                .regular.tint(
+                    isSelected ? Color.blue.opacity(0.5) : Color.clear
+                ),
+                in: .rect(cornerRadius: 10)
+            )
+        }
+    }
+
+    private var thumbnailGradient: LinearGradient {
+        switch room {
+        case .none:
+            return LinearGradient(
+                colors: [Color.gray.opacity(0.3), Color.gray.opacity(0.1)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .pokerRoom:
+            return LinearGradient(
+                colors: [Color.green.opacity(0.6), Color.green.opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .modernOffice:
+            return LinearGradient(
+                colors: [Color.blue.opacity(0.6), Color.cyan.opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .classicLibrary:
+            return LinearGradient(
+                colors: [Color.brown.opacity(0.6), Color.orange.opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .woodCabin:
+            return LinearGradient(
+                colors: [Color.brown.opacity(0.8), Color.brown.opacity(0.4)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .customImage:
+            return LinearGradient(
+                colors: [Color.purple.opacity(0.6), Color.pink.opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    private var thumbnailIcon: String {
+        switch room {
+        case .none:
+            return "xmark.circle"
+        case .pokerRoom:
+            return "suit.spade.fill"
+        case .modernOffice:
+            return "building.2.fill"
+        case .classicLibrary:
+            return "books.vertical.fill"
+        case .woodCabin:
+            return "house.fill"
+        case .customImage:
+            return "photo"
+        }
+    }
+}
+
+struct RoomPhotoPicker: View {
+    let onImagePicked: (UIImage) -> Void
+
+    @State private var selectedItem: PhotosPickerItem?
+
+    var body: some View {
+        PhotosPicker(
+            selection: $selectedItem,
+            matching: .images,
+            photoLibrary: .shared()
+        ) {
+            Label("Choose Panorama", systemImage: "photo.on.rectangle")
+        }
+        .onChange(of: selectedItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    onImagePicked(image)
+                }
+            }
         }
     }
 }

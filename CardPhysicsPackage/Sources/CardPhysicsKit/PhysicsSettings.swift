@@ -20,6 +20,11 @@ public final class PhysicsSettings: Sendable {
     // MARK: - Interaction
     public var enableCardTapGesture: Bool = false
 
+    // MARK: - Room Environment
+    public var roomEnvironment: RoomEnvironment = .none
+    public var customRoomImageFilename: String = ""
+    public var roomRotation: Double = 0.0  // 0-360 degrees
+
     public init() {}
 
     // MARK: - Presets
