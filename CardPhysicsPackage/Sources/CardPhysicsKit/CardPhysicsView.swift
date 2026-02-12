@@ -38,8 +38,11 @@ public class SceneCoordinator {
 @MainActor
 public struct CardPhysicsView: View {
     @State private var settings = PhysicsSettings()
-    @State private var showSettings = false
-    @State private var showCameraControls = false
+    @State private var showDealSettings = false
+    @State private var showPickUpSettings = false
+    @State private var showCardDesign = false
+    @State private var showRoomBackground = false
+    @State private var showCameraSettings = false
     @State private var sceneKey = UUID()
     @State private var cameraPosition: SIMD3<Float> = [0, 0.55, 0.41]
     @State private var cameraTarget: SIMD3<Float> = [0, 0, 0]
@@ -108,12 +111,55 @@ public struct CardPhysicsView: View {
                             resetScene()
                         }
 
-                        AnimationButton(title: "Camera", icon: "video", color: .purple) {
-                            showCameraControls.toggle()
-                        }
-
                         AnimationButton(title: "Settings", icon: "gearshape", color: .gray) {
-                            showSettings.toggle()
+                            // Long-press for context menu
+                        }
+                        .contextMenu {
+                            Menu("Presets") {
+                                Button("Realistic") {
+                                    settings.applyRealisticPreset()
+                                }
+                                Button("Slow Motion") {
+                                    settings.applySlowMotionPreset()
+                                }
+                                Button("Fast") {
+                                    settings.applyFastPreset()
+                                }
+                            }
+
+                            Button("Deal Settings") {
+                                showDealSettings = true
+                            }
+
+                            Button("Pick Up Settings") {
+                                showPickUpSettings = true
+                            }
+
+                            Button("Card Design") {
+                                showCardDesign = true
+                            }
+
+                            Button("Room Background") {
+                                showRoomBackground = true
+                            }
+
+                            Button("Camera") {
+                                showCameraSettings = true
+                            }
+
+                            Divider()
+
+                            Button(action: {
+                                settings.enableCardTapGesture.toggle()
+                            }) {
+                                Label("Tap to Flip", systemImage: settings.enableCardTapGesture ? "checkmark" : "")
+                            }
+
+                            Divider()
+
+                            Button("Reset to Defaults") {
+                                settings.applyRealisticPreset()
+                            }
                         }
                     }
                     .padding(8)
@@ -128,25 +174,43 @@ public struct CardPhysicsView: View {
             }
 
             // Camera control panel
-            if showCameraControls {
+            if showCameraSettings {
                 CameraControlPanel(
                     cameraPosition: $cameraPosition,
                     cameraTarget: $cameraTarget,
-                    isPresented: $showCameraControls,
+                    isPresented: $showCameraSettings,
                     onReset: {
                         cameraPosition = [0, 0.55, 0.41]
                         cameraTarget = [0, 0, 0]
                         resetScene()
                     }
                 )
-                .transition(.move(edge: .leading))
+                .transition(.move(edge: .trailing))
             }
 
-            // Settings panel
-            if showSettings {
-                SettingsPanel(
+            // Deal Settings Panel
+            if showDealSettings {
+                DealSettingsPanel(
                     settings: settings,
-                    isPresented: $showSettings,
+                    isPresented: $showDealSettings
+                )
+                .transition(.move(edge: .trailing))
+            }
+
+            // Pick Up Settings Panel
+            if showPickUpSettings {
+                PickUpSettingsPanel(
+                    settings: settings,
+                    isPresented: $showPickUpSettings
+                )
+                .transition(.move(edge: .trailing))
+            }
+
+            // Card Design Panel
+            if showCardDesign {
+                CardDesignPanel(
+                    settings: settings,
+                    isPresented: $showCardDesign,
                     onDesignChanged: {
                         CardTextureGenerator.shared.invalidateAll()
                         resetScene()
@@ -154,9 +218,21 @@ public struct CardPhysicsView: View {
                 )
                 .transition(.move(edge: .trailing))
             }
+
+            // Room Background Panel
+            if showRoomBackground {
+                RoomBackgroundPanel(
+                    settings: settings,
+                    isPresented: $showRoomBackground
+                )
+                .transition(.move(edge: .trailing))
+            }
         }
-        .animation(.easeInOut, value: showSettings)
-        .animation(.easeInOut, value: showCameraControls)
+        .animation(.easeInOut, value: showDealSettings)
+        .animation(.easeInOut, value: showPickUpSettings)
+        .animation(.easeInOut, value: showCardDesign)
+        .animation(.easeInOut, value: showRoomBackground)
+        .animation(.easeInOut, value: showCameraSettings)
         .persistentSystemOverlays(.hidden)
     }
 
@@ -217,6 +293,8 @@ struct CameraControlPanel: View {
 
     var body: some View {
         HStack {
+            Spacer()
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     // Header
@@ -350,28 +428,139 @@ struct CameraControlPanel: View {
             }
             .frame(width: 240)
             .glassEffect(.regular, in: .rect(cornerRadius: 12))
-            .padding(.leading, 8)
+            .padding(.trailing, 8)
             .padding(.vertical, 8)
-
-            Spacer()
         }
     }
 }
 
-struct SettingsPanel: View {
+struct DealSettingsPanel: View {
+    @Bindable var settings: PhysicsSettings
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        HStack {
+            Spacer()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Header
+                    HStack {
+                        Text("Deal Settings")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                        Spacer()
+                        Button("Done") {
+                            isPresented = false
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    }
+
+                    Divider()
+
+                    // Sliders
+                    SliderSetting(
+                        label: "Duration",
+                        value: $settings.dealDuration,
+                        range: 0.1...3.0,
+                        unit: "s"
+                    )
+
+                    SliderSetting(
+                        label: "Arc Height",
+                        value: Binding(
+                            get: { Double(settings.dealArcHeight) },
+                            set: { settings.dealArcHeight = Float($0) }
+                        ),
+                        range: 0.0...0.4,
+                        unit: "m"
+                    )
+
+                    SliderSetting(
+                        label: "Rotation",
+                        value: $settings.dealRotation,
+                        range: 0...90,
+                        unit: "°"
+                    )
+                }
+                .padding(12)
+            }
+            .frame(width: 240)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .padding(.trailing, 8)
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+struct PickUpSettingsPanel: View {
+    @Bindable var settings: PhysicsSettings
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        HStack {
+            Spacer()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Header
+                    HStack {
+                        Text("Pick Up Settings")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                        Spacer()
+                        Button("Done") {
+                            isPresented = false
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    }
+
+                    Divider()
+
+                    // Sliders
+                    SliderSetting(
+                        label: "Duration",
+                        value: $settings.pickUpDuration,
+                        range: 0.1...1.5,
+                        unit: "s"
+                    )
+
+                    SliderSetting(
+                        label: "Arc Height",
+                        value: Binding(
+                            get: { Double(settings.pickUpArcHeight) },
+                            set: { settings.pickUpArcHeight = Float($0) }
+                        ),
+                        range: 0.0...0.2,
+                        unit: "m"
+                    )
+
+                    SliderSetting(
+                        label: "Rotation",
+                        value: $settings.pickUpRotation,
+                        range: 0...30,
+                        unit: "°"
+                    )
+                }
+                .padding(12)
+            }
+            .frame(width: 240)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .padding(.trailing, 8)
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+struct CardDesignPanel: View {
     @Bindable var settings: PhysicsSettings
     @Binding var isPresented: Bool
     var onDesignChanged: () -> Void = {}
 
-    @State private var dealExpanded = true
-    @State private var pickUpExpanded = true
-    @State private var designExpanded = true
-    @State private var roomExpanded = true
-    @State private var showingFacePhotoPicker = false
-    @State private var showingBackPhotoPicker = false
     @State private var showingFaceCamera = false
     @State private var showingBackCamera = false
-    @State private var showingRoomPhotoPicker = false
 
     private var designConfig: CardDesignConfiguration {
         CardTextureGenerator.shared.designConfig
@@ -382,232 +571,60 @@ struct SettingsPanel: View {
             Spacer()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 16) {
                     // Header
                     HStack {
-                        Text("Physics Settings")
-                            .font(.title2)
-                            .bold()
-
+                        Text("Card Design")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
                         Spacer()
-
                         Button("Done") {
                             isPresented = false
                         }
-                    }
-                    .padding(.bottom)
-
-                    // Presets
-                    Text("Presets")
-                        .font(.headline)
-
-                    HStack(spacing: 12) {
-                        PresetButton(title: "Realistic") {
-                            settings.applyRealisticPreset()
-                        }
-
-                        PresetButton(title: "Slow Motion") {
-                            settings.applySlowMotionPreset()
-                        }
-
-                        PresetButton(title: "Fast") {
-                            settings.applyFastPreset()
-                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
                     }
 
                     Divider()
 
-                    // Deal animation settings
-                    DisclosureGroup(isExpanded: $dealExpanded) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SliderSetting(
-                                label: "Duration",
-                                value: $settings.dealDuration,
-                                range: 0.1...3.0,
-                                unit: "s"
-                            )
+                    // Face Style
+                    Text("Face Style")
+                        .font(.caption)
+                        .fontWeight(.semibold)
 
-                            SliderSetting(
-                                label: "Arc Height",
-                                value: Binding(
-                                    get: { Double(settings.dealArcHeight) },
-                                    set: { settings.dealArcHeight = Float($0) }
-                                ),
-                                range: 0.0...0.4,
-                                unit: "m"
-                            )
+                    faceStylePicker
 
-                            SliderSetting(
-                                label: "Rotation",
-                                value: $settings.dealRotation,
-                                range: 0...90,
-                                unit: "°"
-                            )
-                        }
-                        .padding(.top, 8)
-                    } label: {
-                        Text("Deal")
-                            .font(.headline)
-                    }
+                    // Back Style
+                    Text("Back Style")
+                        .font(.caption)
+                        .fontWeight(.semibold)
 
-                    // Pick Up animation settings
-                    DisclosureGroup(isExpanded: $pickUpExpanded) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SliderSetting(
-                                label: "Duration",
-                                value: $settings.pickUpDuration,
-                                range: 0.1...1.5,
-                                unit: "s"
-                            )
+                    backStylePicker
 
-                            SliderSetting(
-                                label: "Arc Height",
-                                value: Binding(
-                                    get: { Double(settings.pickUpArcHeight) },
-                                    set: { settings.pickUpArcHeight = Float($0) }
-                                ),
-                                range: 0.0...0.2,
-                                unit: "m"
-                            )
+                    // Preview
+                    Text("Preview")
+                        .font(.caption)
+                        .fontWeight(.semibold)
 
-                            SliderSetting(
-                                label: "Rotation",
-                                value: $settings.pickUpRotation,
-                                range: 0...30,
-                                unit: "°"
-                            )
-                        }
-                        .padding(.top, 8)
-                    } label: {
-                        Text("Pick Up")
-                            .font(.headline)
-                    }
+                    designPreview
 
-                    Divider()
-
-                    // Card Design
-                    DisclosureGroup(isExpanded: $designExpanded) {
-                        VStack(alignment: .leading, spacing: 16) {
-                            // Face Style
-                            Text("Face Style")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-
-                            faceStylePicker
-
-                            // Back Style
-                            Text("Back Style")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-
-                            backStylePicker
-
-                            // Preview
-                            Text("Preview")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-
-                            designPreview
-
-                            // Curvature slider
-                            SliderSetting(
-                                label: "Curvature",
-                                value: Binding(
-                                    get: { Double(settings.cardCurvature) },
-                                    set: { settings.cardCurvature = Float($0) }
-                                ),
-                                range: 0.0...0.01,
-                                unit: ""
-                            )
-                        }
-                        .padding(.top, 8)
-                    } label: {
-                        Text("Card Design")
-                            .font(.headline)
-                    }
-
-                    Divider()
-
-                    // Room Background
-                    DisclosureGroup(isExpanded: $roomExpanded) {
-                        VStack(alignment: .leading, spacing: 16) {
-                            // Room thumbnails
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(RoomEnvironment.allCases, id: \.self) { room in
-                                        RoomThumbnail(
-                                            room: room,
-                                            isSelected: settings.roomEnvironment == room,
-                                            onSelect: {
-                                                settings.roomEnvironment = room
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Custom image import
-                            if settings.roomEnvironment == .customImage {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Custom Image")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-
-                                    RoomPhotoPicker { image in
-                                        handleRoomImageCapture(image)
-                                    }
-                                    .font(.caption2)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .glassEffect(.regular.tint(Color.blue.opacity(0.6)).interactive(), in: .rect(cornerRadius: 8))
-                                }
-                            }
-
-                            // Room rotation slider
-                            SliderSetting(
-                                label: "Rotation",
-                                value: $settings.roomRotation,
-                                range: 0...360,
-                                unit: "°"
-                            )
-                        }
-                        .padding(.top, 8)
-                    } label: {
-                        Text("Room Background")
-                            .font(.headline)
-                    }
-
-                    Divider()
-
-                    // Interaction
-                    Text("Interaction")
-                        .font(.headline)
-
-                    Toggle("Tap to Flip Cards", isOn: $settings.enableCardTapGesture)
-                        .font(.subheadline)
-
-                    Divider()
-
-                    // Reset to Defaults
-                    Button(action: { settings.applyRealisticPreset() }) {
-                        HStack {
-                            Image(systemName: "arrow.counterclockwise")
-                                .font(.caption2)
-                            Text("Reset to Defaults")
-                                .font(.caption)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .foregroundColor(.white)
-                        .glassEffect(.regular.tint(Color.red.opacity(0.6)).interactive(), in: .rect(cornerRadius: 6))
-                    }
+                    // Curvature slider
+                    SliderSetting(
+                        label: "Curvature",
+                        value: Binding(
+                            get: { Double(settings.cardCurvature) },
+                            set: { settings.cardCurvature = Float($0) }
+                        ),
+                        range: 0.0...0.01,
+                        unit: ""
+                    )
                 }
-                .padding()
+                .padding(12)
             }
             .frame(width: 350)
-            .glassEffect(.regular, in: .rect(cornerRadius: 20))
-            .padding()
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .padding(.trailing, 8)
+            .padding(.vertical, 8)
         }
         .fullScreenCover(isPresented: $showingFaceCamera) {
             CameraPicker { image in
@@ -844,13 +861,95 @@ struct SettingsPanel: View {
         designConfig.save()
         onDesignChanged()
     }
+}
+
+struct RoomBackgroundPanel: View {
+    @Bindable var settings: PhysicsSettings
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        HStack {
+            Spacer()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Header
+                    HStack {
+                        Text("Room Background")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                        Spacer()
+                        Button("Done") {
+                            isPresented = false
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    }
+
+                    Divider()
+
+                    // Room thumbnails
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(RoomEnvironment.allCases, id: \.self) { room in
+                                RoomThumbnail(
+                                    room: room,
+                                    isSelected: settings.roomEnvironment == room,
+                                    onSelect: {
+                                        settings.roomEnvironment = room
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Custom image import
+                    if settings.roomEnvironment == .customImage {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Custom Image")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+
+                            RoomPhotoPicker { image in
+                                handleRoomImageCapture(image)
+                            }
+                            .font(.caption2)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .glassEffect(.regular.tint(Color.blue.opacity(0.6)).interactive(), in: .rect(cornerRadius: 8))
+                        }
+                    }
+
+                    // Room rotation slider
+                    SliderSetting(
+                        label: "Rotation",
+                        value: $settings.roomRotation,
+                        range: 0...360,
+                        unit: "°"
+                    )
+                }
+                .padding(12)
+            }
+            .frame(width: 300)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .padding(.trailing, 8)
+            .padding(.vertical, 8)
+        }
+    }
 
     // MARK: - Room Image Handling
 
     private func handleRoomImageCapture(_ image: UIImage) {
-        // TODO: This will be implemented when RoomImageStorage is available
-        // For now, we'll just set the filename to a placeholder
-        settings.customRoomImageFilename = "custom_room_\(UUID().uuidString).jpg"
+        guard let filename = RoomImageStorage.saveImage(image) else { return }
+
+        // Clean up old custom room image
+        if !settings.customRoomImageFilename.isEmpty {
+            RoomImageStorage.removeImage(filename: settings.customRoomImageFilename)
+        }
+
+        settings.customRoomImageFilename = filename
+        settings.roomEnvironment = .customImage
     }
 }
 
