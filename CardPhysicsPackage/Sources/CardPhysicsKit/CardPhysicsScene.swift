@@ -7,6 +7,7 @@ public struct CardPhysicsScene: View {
     @State private var cards: [Entity] = []
     @State private var cardSideAssignments: [ObjectIdentifier: Int] = [:]
     @State private var deckPosition = Entity()
+    @State private var handEntities: [Entity] = []
     @State private var lastRoomEnvironment: RoomEnvironment = .none
     @State private var lastCustomRoomImageFilename: String = ""
     @State private var lastRoomRotation: Double = 0.0
@@ -444,10 +445,13 @@ public struct CardPhysicsScene: View {
     // MARK: - Animation Methods (to be called from parent view)
 
     public func dealCards(mode: DealMode) async {
-        // Remove existing cards and create correct count for this mode
+        // Remove existing cards and hands
         for card in cards { card.removeFromParent() }
         cards.removeAll()
         cardSideAssignments.removeAll()
+        for hand in handEntities { hand.removeFromParent() }
+        handEntities.removeAll()
+
         createDeck(count: mode.cardCount)
 
         switch mode {
@@ -455,11 +459,15 @@ public struct CardPhysicsScene: View {
             await dealCardsEuchre()
         case .four, .twelve, .twenty:
             await dealCardsStandard()
+        case .inHands:
+            await dealCardsInHands()
         }
 
-        // Wait for physics to settle, then stack cards neatly
-        try? await Task.sleep(for: .seconds(2.0))
-        await stackCardsBySide()
+        // Wait for physics to settle, then stack cards neatly (except for inHands mode)
+        if mode != .inHands {
+            try? await Task.sleep(for: .seconds(2.0))
+            await stackCardsBySide()
+        }
     }
 
     private func dealCardsStandard() async {
@@ -503,6 +511,115 @@ public struct CardPhysicsScene: View {
 
             // Pause between bundles
             try? await Task.sleep(for: .seconds(0.3))
+        }
+    }
+
+    private func dealCardsInHands() async {
+        // Create hands for all 4 sides
+        for side in 1...4 {
+            let handPosition = HandEntity3D.getHandPosition(side: side)
+            let hand = HandEntity3D.makeHand(side: side, position: handPosition)
+            handEntities.append(hand)
+            rootEntity.addChild(hand)
+        }
+
+        // Deal cards evenly to each side, then arrange in fan
+        let cardsPerSide = cards.count / 4
+        var cardsBySide: [Int: [Entity]] = [1: [], 2: [], 3: [], 4: []]
+
+        // Distribute cards
+        for (index, cardIndex) in cards.indices.reversed().enumerated() {
+            let card = cards[cardIndex]
+            let side = [1, 2, 3, 4][index % 4]
+            cardsBySide[side]?.append(card)
+            cardSideAssignments[ObjectIdentifier(card)] = side
+        }
+
+        // Animate cards to their fanned positions for each side
+        for side in 1...4 {
+            guard let sideCards = cardsBySide[side] else { continue }
+
+            let fanCenter = HandEntity3D.getFanCenterPosition(side: side)
+            let cardCount = sideCards.count
+
+            for (cardIndex, card) in sideCards.enumerated() {
+                // Flip card face-up
+                card.orientation = simd_quatf(angle: .pi, axis: [1, 0, 0])
+
+                // Calculate fan arc parameters from settings
+                let fanAngle = settings.inHandsFanAngle
+                let verticalOffset = settings.inHandsVerticalSpacing
+                let arcRadius = settings.inHandsArcRadius
+
+                // Calculate position in fan (centered around middle card)
+                let normalizedIndex = Float(cardIndex) / Float(max(cardCount - 1, 1)) // 0.0 to 1.0
+                let fanProgress = normalizedIndex - 0.5 // -0.5 to 0.5
+
+                // Calculate arc position
+                let arcAngle = fanProgress * fanAngle
+
+                // Position based on side orientation
+                var cardPosition: SIMD3<Float>
+                var cardRotation: simd_quatf
+
+                switch side {
+                case 1: // Bottom - fan opens upward toward table center
+                    cardPosition = SIMD3(
+                        fanCenter.x + sin(arcAngle) * arcRadius,
+                        fanCenter.y + Float(cardIndex) * verticalOffset,
+                        fanCenter.z - cos(arcAngle) * arcRadius + arcRadius
+                    )
+                    cardRotation = simd_quatf(angle: .pi + arcAngle, axis: [1, 0, 0])
+
+                case 2: // Left - fan opens toward table center
+                    cardPosition = SIMD3(
+                        fanCenter.x + cos(arcAngle) * arcRadius - arcRadius,
+                        fanCenter.y + Float(cardIndex) * verticalOffset,
+                        fanCenter.z + sin(arcAngle) * arcRadius
+                    )
+                    cardRotation = simd_quatf(angle: .pi, axis: [1, 0, 0]) *
+                                 simd_quatf(angle: .pi / 2 + arcAngle, axis: [0, 1, 0])
+
+                case 3: // Top - fan opens toward table center
+                    cardPosition = SIMD3(
+                        fanCenter.x - sin(arcAngle) * arcRadius,
+                        fanCenter.y + Float(cardIndex) * verticalOffset,
+                        fanCenter.z + cos(arcAngle) * arcRadius - arcRadius
+                    )
+                    cardRotation = simd_quatf(angle: .pi - arcAngle, axis: [1, 0, 0])
+
+                case 4: // Right - fan opens toward table center
+                    cardPosition = SIMD3(
+                        fanCenter.x - cos(arcAngle) * arcRadius + arcRadius,
+                        fanCenter.y + Float(cardIndex) * verticalOffset,
+                        fanCenter.z - sin(arcAngle) * arcRadius
+                    )
+                    cardRotation = simd_quatf(angle: .pi, axis: [1, 0, 0]) *
+                                 simd_quatf(angle: -.pi / 2 + arcAngle, axis: [0, 1, 0])
+
+                default:
+                    cardPosition = fanCenter
+                    cardRotation = simd_quatf(angle: .pi, axis: [1, 0, 0])
+                }
+
+                // Animate card to position (kinematic mode for smooth animation)
+                if var physicsBody = card.components[PhysicsBodyComponent.self] {
+                    physicsBody.mode = .kinematic
+                    card.components[PhysicsBodyComponent.self] = physicsBody
+                }
+
+                // Stagger the animation slightly
+                let delay = Double(cardIndex) * 0.05
+                try? await Task.sleep(for: .seconds(delay))
+
+                // Animate to final position using settings duration
+                card.move(
+                    to: Transform(scale: [1, 1, 1], rotation: cardRotation, translation: cardPosition),
+                    relativeTo: nil,
+                    duration: settings.inHandsAnimationDuration,
+                    timingFunction: .easeInOut
+                )
+            }
         }
     }
 
