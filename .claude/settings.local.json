@@ -10,7 +10,13 @@
       "Bash(git push:*)",
       "Bash(gh issue create:*)",
       "Bash(ls:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(git merge:*)",
+      "Bash(swift build:*)",
+      "Bash(xcrun xctrace:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(xcrun devicectl device install app:*)",
+      "Bash(xcrun devicectl device process launch:*)"
     ]
   }
 }

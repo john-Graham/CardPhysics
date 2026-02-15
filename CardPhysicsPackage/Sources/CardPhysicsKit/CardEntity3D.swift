@@ -34,17 +34,7 @@ enum CardEntity3D {
 
         let texGen = CardTextureGenerator.shared
 
-        // Material 0 → descriptor 0 (+Y face, visible when face-down) = card back
-        var backMaterial = makeBaseMaterial()
-        if let backTex = texGen.backTexture() {
-            backMaterial.baseColor = .init(texture: .init(backTex))
-        } else {
-            backMaterial.baseColor = .init(
-                tint: .init(red: 0.55, green: 0.08, blue: 0.10, alpha: 1.0)
-            )
-        }
-
-        // Material 1 → descriptor 1 (-Y face, visible when flipped face-up) = card face
+        // Material 0 → descriptor 0 = card FACE (mesh front)
         var faceMaterial = makeBaseMaterial()
         if let faceTex = texGen.texture(for: card) {
             faceMaterial.baseColor = .init(texture: .init(faceTex))
@@ -54,7 +44,12 @@ enum CardEntity3D {
             )
         }
 
-        let entity = ModelEntity(mesh: mesh, materials: [backMaterial, faceMaterial])
+        // Material 1 → descriptor 1 = card BACK (mesh back + edges)
+        var backMaterial = makeBaseMaterial()
+        // Temporarily use bright blue to verify back side is visible
+        backMaterial.baseColor = .init(tint: .init(red: 0.0, green: 0.5, blue: 1.0, alpha: 1.0))
+
+        let entity = ModelEntity(mesh: mesh, materials: [faceMaterial, backMaterial])
         entity.name = "card_\(card.suit.name)_\(card.rank.name)"
 
         // Always add collision component for cards
