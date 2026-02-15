@@ -32,6 +32,7 @@ public enum GatherCorner: String, CaseIterable, Sendable {
 public class SceneCoordinator {
     public var dealCardsAction: ((DealMode) async -> Void)?
     public var pickUpCardAction: ((GatherCorner) async -> Void)?
+    public var fanInHandsAction: (() async -> Void)?
     public var resetCardsAction: (() -> Void)?
 
     public init() {}
@@ -106,6 +107,10 @@ public struct CardPhysicsView: View {
                             }
                         }
 
+                        AnimationButton(title: "Fan in Hands", icon: "hand.thumbsup.fill", color: .green) {
+                            await triggerAnimation(.fanInHands)
+                        }
+
                         AnimationButton(title: "Reset", icon: "arrow.counterclockwise", color: .red) {
                             resetScene()
                         }
@@ -163,7 +168,7 @@ public struct CardPhysicsView: View {
     }
 
     enum AnimationType {
-        case deal, pickUp
+        case deal, pickUp, fanInHands
     }
 
     private func triggerAnimation(_ type: AnimationType) async {
@@ -172,6 +177,8 @@ public struct CardPhysicsView: View {
             await coordinator.dealCardsAction?(selectedDealMode)
         case .pickUp:
             await coordinator.pickUpCardAction?(selectedCorner)
+        case .fanInHands:
+            await coordinator.fanInHandsAction?()
         }
     }
 
