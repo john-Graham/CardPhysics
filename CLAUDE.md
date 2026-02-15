@@ -31,6 +31,21 @@ CardPhysics/
 
 The root `Package.swift` defines an SPM executable target (`Sources/CardPhysicsApp/`) but the real app is built through the Xcode project, which depends on `CardPhysicsPackage/` as a local Swift package.
 
+### Installing on Physical Device
+John's iPhone (iOS 26.3) is usually available for installation, either:
+- Connected via USB (device ID: `00008150-0010281E2261401C`)
+- On the same WiFi network for wireless deployment
+
+To install via command line:
+```bash
+# Build and deploy
+xcrun devicectl device install app --device 00008150-0010281E2261401C \
+  ~/Library/Developer/Xcode/DerivedData/CardPhysicsApp-*/Build/Products/Debug-iphoneos/CardPhysicsApp.app
+
+# Launch
+xcrun devicectl device process launch --device 00008150-0010281E2261401C johndgraham.CardPhysicsApp
+```
+
 ## Key Conventions
 - **Swift 6.1+** with StrictConcurrency and ExistentialAny enabled in the package
 - **iOS 26.0+** minimum deployment target (currently 26.2)
