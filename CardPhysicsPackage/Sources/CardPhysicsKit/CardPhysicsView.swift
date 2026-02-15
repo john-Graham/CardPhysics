@@ -7,6 +7,7 @@ public enum DealMode: String, CaseIterable, Sendable {
     case twelve = "12 Cards"
     case twenty = "20 Cards"
     case euchre = "Euchre"
+    case inHands = "In Hands"
 
     var cardCount: Int {
         switch self {
@@ -14,6 +15,7 @@ public enum DealMode: String, CaseIterable, Sendable {
         case .twelve: return 12
         case .twenty: return 20
         case .euchre: return 20
+        case .inHands: return 20
         }
     }
 }

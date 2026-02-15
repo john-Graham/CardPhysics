@@ -14,6 +14,12 @@ public final class PhysicsSettings: Sendable {
     public var pickUpArcHeight: Float = 0.08
     public var pickUpRotation: Double = 5.0
 
+    // MARK: - In Hands Animation
+    public var inHandsFanAngle: Float = .pi / 6  // Total fan angle (30 degrees)
+    public var inHandsArcRadius: Float = 0.3     // Radius of the fan arc
+    public var inHandsVerticalSpacing: Float = 0.015  // Vertical spacing between cards
+    public var inHandsAnimationDuration: Double = 0.4  // Animation duration per card
+
     // MARK: - Card Appearance
     public var cardCurvature: Float = 0.002
 
@@ -38,6 +44,11 @@ public final class PhysicsSettings: Sendable {
         dealRotation = 15.0
         pickUpRotation = 5.0
 
+        inHandsFanAngle = .pi / 6
+        inHandsArcRadius = 0.3
+        inHandsVerticalSpacing = 0.015
+        inHandsAnimationDuration = 0.4
+
         cardCurvature = 0.002
     }
 
@@ -51,6 +62,11 @@ public final class PhysicsSettings: Sendable {
         dealRotation = 20.0
         pickUpRotation = 8.0
 
+        inHandsFanAngle = .pi / 5
+        inHandsArcRadius = 0.35
+        inHandsVerticalSpacing = 0.02
+        inHandsAnimationDuration = 0.8
+
         cardCurvature = 0.003
     }
 
@@ -63,6 +79,11 @@ public final class PhysicsSettings: Sendable {
 
         dealRotation = 10.0
         pickUpRotation = 3.0
+
+        inHandsFanAngle = .pi / 7
+        inHandsArcRadius = 0.25
+        inHandsVerticalSpacing = 0.01
+        inHandsAnimationDuration = 0.2
 
         cardCurvature = 0.001
     }
