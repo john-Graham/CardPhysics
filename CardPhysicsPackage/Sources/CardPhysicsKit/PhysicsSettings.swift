@@ -21,6 +21,20 @@ public final class InHandsSideSettings: Sendable {
     }
 }
 
+public enum ShadowQuality: String, CaseIterable, Sendable {
+    case low = "Low"
+    case medium = "Medium"
+    case high = "High"
+
+    public var mapResolution: Int {
+        switch self {
+        case .low: return 256
+        case .medium: return 512
+        case .high: return 1024
+        }
+    }
+}
+
 @Observable
 @MainActor
 public final class PhysicsSettings: Sendable {
@@ -57,6 +71,23 @@ public final class PhysicsSettings: Sendable {
 
     // MARK: - Interaction
     public var enableCardTapGesture: Bool = false
+
+    // MARK: - Table Theme
+    public var tableTheme: TableThemeSettings = TableThemeSettings()
+
+    // MARK: - Card Wear
+    public var enableCardWear: Bool = false
+    public var wearIntensity: Double = 1.0  // 0.5 to 2.0
+
+    // MARK: - Particle Effects
+    public var enableDustMotes: Bool = false
+    public var enableFeltDisturbance: Bool = false
+    public var dustDensity: Double = 1.0    // 0.5 to 2.0
+    public var burstIntensity: Double = 1.0  // 0.5 to 2.0
+
+    // MARK: - Shadows
+    public var enableCardShadows: Bool = false
+    public var shadowQuality: ShadowQuality = .medium
 
     // MARK: - Room Environment
     public var roomEnvironment: RoomEnvironment = .none

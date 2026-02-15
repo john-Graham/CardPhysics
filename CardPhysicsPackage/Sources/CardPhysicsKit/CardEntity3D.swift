@@ -15,7 +15,8 @@ enum CardEntity3D {
         _ card: Card,
         faceUp: Bool,
         enableTap: Bool = false,
-        curvature: Float = 0.0
+        curvature: Float = 0.0,
+        enableShadows: Bool = false
     ) -> ModelEntity {
         // Always use CurvedCardMesh — at curvature 0 it produces a flat mesh
         let mesh = CurvedCardMesh.mesh(curvature: curvature)
@@ -79,6 +80,10 @@ enum CardEntity3D {
 
         if enableTap {
             entity.components.set(InputTargetComponent())
+        }
+
+        if enableShadows {
+            entity.components.set(GroundingShadowComponent(castsShadow: true))
         }
 
         return entity

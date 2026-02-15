@@ -11,6 +11,17 @@ public struct CardPhysicsScene: View {
     @State private var lastRoomEnvironment: RoomEnvironment = .none
     @State private var lastCustomRoomImageFilename: String = ""
     @State private var lastRoomRotation: Double = 0.0
+    @State private var lastShadowsEnabled: Bool = false
+    @State private var lastShadowQuality: ShadowQuality = .medium
+    @State private var lastFeltCacheKey: String = ""
+    @State private var lastWoodCacheKey: String = ""
+    @State private var cardWearComponents: [ObjectIdentifier: CardWearComponent] = [:]
+    @State private var cardDataMap: [ObjectIdentifier: Card] = [:]
+    @State private var collisionSubscription: EventSubscription?
+    @State private var dustEmitterEntity: Entity?
+    @State private var activeBurstEntities: [Entity] = []
+    @State private var lastDustMotesEnabled: Bool = false
+    @State private var lastFeltDisturbanceEnabled: Bool = false
 
     public let settings: PhysicsSettings
     public let cameraPosition: SIMD3<Float>
@@ -74,11 +85,103 @@ public struct CardPhysicsScene: View {
             coordinator?.resetCardsAction = { [self] in
                 self.resetCards()
             }
+            coordinator?.updateTableMaterialsAction = { [self] in
+                self.updateTableMaterials()
+            }
+
+            // Subscribe to collision events for wear tracking and felt disturbance
+            if settings.enableCardWear || settings.enableFeltDisturbance {
+                collisionSubscription = content.subscribe(to: CollisionEvents.Began.self) { event in
+                    handleCollision(entityA: event.entityA, entityB: event.entityB)
+                }
+            }
+
+            // Pre-generate wear overlay textures if wear is enabled
+            if settings.enableCardWear {
+                ProceduralTextureGenerator.preloadWearOverlays(intensity: CGFloat(settings.wearIntensity))
+            }
+
+            // Add dust motes emitter if enabled
+            if settings.enableDustMotes {
+                let emitter = ParticleEffects.createDustMotesEmitter(density: Float(settings.dustDensity))
+                rootEntity.addChild(emitter)
+                dustEmitterEntity = emitter
+            }
+            lastDustMotesEnabled = settings.enableDustMotes
+            lastFeltDisturbanceEnabled = settings.enableFeltDisturbance
+
+            // Store initial theme cache keys
+            lastFeltCacheKey = settings.tableTheme.feltCacheKey
+            lastWoodCacheKey = settings.tableTheme.woodCacheKey
         } update: { content in
             // Update camera position when parameters change
             if let cameraEntity = rootEntity.findEntity(named: "camera") {
                 cameraEntity.position = cameraPosition
                 cameraEntity.look(at: cameraTarget, from: cameraPosition, relativeTo: nil)
+            }
+
+            // Update shadow light if settings changed
+            if settings.enableCardShadows != lastShadowsEnabled ||
+               settings.shadowQuality != lastShadowQuality {
+                if settings.enableCardShadows {
+                    setupShadowLight()
+                    // Add GroundingShadowComponent to felt if not already present
+                    if let felt = rootEntity.findEntity(named: "feltSurface") as? ModelEntity {
+                        felt.components.set(GroundingShadowComponent(castsShadow: true))
+                    }
+                    // Add shadow components to existing cards
+                    for card in cards {
+                        if let modelEntity = card as? ModelEntity {
+                            modelEntity.components.set(GroundingShadowComponent(castsShadow: true))
+                        }
+                    }
+                } else {
+                    removeShadowLight()
+                    // Remove shadow components from felt
+                    if let felt = rootEntity.findEntity(named: "feltSurface") as? ModelEntity {
+                        felt.components.remove(GroundingShadowComponent.self)
+                    }
+                    // Remove shadow components from cards
+                    for card in cards {
+                        if let modelEntity = card as? ModelEntity {
+                            modelEntity.components.remove(GroundingShadowComponent.self)
+                        }
+                    }
+                }
+                lastShadowsEnabled = settings.enableCardShadows
+                lastShadowQuality = settings.shadowQuality
+            }
+
+            // Update table materials if theme changed
+            let currentFeltKey = settings.tableTheme.feltCacheKey
+            let currentWoodKey = settings.tableTheme.woodCacheKey
+            if currentFeltKey != lastFeltCacheKey || currentWoodKey != lastWoodCacheKey {
+                updateTableMaterials()
+                lastFeltCacheKey = currentFeltKey
+                lastWoodCacheKey = currentWoodKey
+            }
+
+            // Update dust motes emitter if toggled
+            if settings.enableDustMotes != lastDustMotesEnabled {
+                if settings.enableDustMotes {
+                    let emitter = ParticleEffects.createDustMotesEmitter(density: Float(settings.dustDensity))
+                    rootEntity.addChild(emitter)
+                    dustEmitterEntity = emitter
+                } else {
+                    dustEmitterEntity?.removeFromParent()
+                    dustEmitterEntity = nil
+                }
+                lastDustMotesEnabled = settings.enableDustMotes
+            }
+
+            // Set up or tear down collision subscription for felt disturbance
+            if settings.enableFeltDisturbance != lastFeltDisturbanceEnabled {
+                if settings.enableFeltDisturbance && collisionSubscription == nil {
+                    collisionSubscription = content.subscribe(to: CollisionEvents.Began.self) { event in
+                        handleCollision(entityA: event.entityA, entityB: event.entityB)
+                    }
+                }
+                lastFeltDisturbanceEnabled = settings.enableFeltDisturbance
             }
 
             // Update skybox if room settings changed
@@ -131,12 +234,13 @@ public struct CardPhysicsScene: View {
 
         var woodMaterial = PhysicallyBasedMaterial()
 
-        // Wood Albedo (Warm Mahogany)
-        if let woodImg = texGen.woodAlbedo(),
+        // Wood Albedo -- use theme color
+        let woodRGB = settings.tableTheme.effectiveWoodRGB
+        if let woodImg = texGen.woodAlbedo(baseR: woodRGB.r, baseG: woodRGB.g, baseB: woodRGB.b),
            let woodTex = texGen.colorTexture(from: woodImg) {
             woodMaterial.baseColor = .init(texture: .init(woodTex))
         } else {
-            woodMaterial.baseColor = .init(tint: .init(red: 0.4, green: 0.15, blue: 0.05, alpha: 1.0))
+            woodMaterial.baseColor = .init(tint: .init(red: CGFloat(woodRGB.r), green: CGFloat(woodRGB.g), blue: CGFloat(woodRGB.b), alpha: 1.0))
         }
 
         // Wood Roughness (Underlying grain texture)
@@ -204,12 +308,13 @@ public struct CardPhysicsScene: View {
 
         var feltMaterial = PhysicallyBasedMaterial()
 
-        // Felt Albedo (Rich Green)
-        if let feltImg = texGen.feltAlbedo(),
+        // Felt Albedo -- use theme color
+        let feltRGB = settings.tableTheme.effectiveFeltRGB
+        if let feltImg = texGen.feltAlbedo(baseR: feltRGB.r, baseG: feltRGB.g, baseB: feltRGB.b),
            let feltTex = texGen.colorTexture(from: feltImg) {
             feltMaterial.baseColor = .init(texture: .init(feltTex))
         } else {
-            feltMaterial.baseColor = .init(tint: .init(red: 0.02, green: 0.18, blue: 0.06, alpha: 1.0))
+            feltMaterial.baseColor = .init(tint: .init(red: CGFloat(feltRGB.r), green: CGFloat(feltRGB.g), blue: CGFloat(feltRGB.b), alpha: 1.0))
         }
 
         // Felt Roughness (Matte)
@@ -231,6 +336,11 @@ public struct CardPhysicsScene: View {
         let felt = ModelEntity(mesh: feltMesh, materials: [feltMaterial])
         felt.position = [0, 0.0025, 0]
         felt.name = "feltSurface"
+
+        // Add grounding shadow component so felt receives card shadows
+        if settings.enableCardShadows {
+            felt.components.set(GroundingShadowComponent(castsShadow: true))
+        }
 
         // Add physics to the felt surface so cards can collide with it
         let feltShape = ShapeResource.generateBox(
@@ -340,6 +450,39 @@ public struct CardPhysicsScene: View {
             print("⚠️ Failed to load HDRI: \(error). Using fallback lighting.")
             setupFallbackLighting()
         }
+
+        // Add directional light for shadows if enabled
+        if settings.enableCardShadows {
+            setupShadowLight()
+        }
+        lastShadowsEnabled = settings.enableCardShadows
+        lastShadowQuality = settings.shadowQuality
+    }
+
+    private func setupShadowLight() {
+        // Remove existing shadow light if any
+        if let existing = rootEntity.findEntity(named: "shadowDirectionalLight") {
+            existing.removeFromParent()
+        }
+
+        let shadowLight = Entity()
+        var directionalLight = DirectionalLightComponent()
+        directionalLight.color = .init(red: 1.0, green: 0.98, blue: 0.95, alpha: 1.0)
+        directionalLight.intensity = 500
+        // Note: Shadow casting is controlled by GroundingShadowComponent on entities,
+        // not by DirectionalLightComponent configuration
+        shadowLight.components.set(directionalLight)
+        // Position above and slightly in front, angled down at the table
+        shadowLight.position = [0.2, 1.5, 0.3]
+        shadowLight.look(at: [0, 0, 0], from: shadowLight.position, relativeTo: nil)
+        shadowLight.name = "shadowDirectionalLight"
+        rootEntity.addChild(shadowLight)
+    }
+
+    private func removeShadowLight() {
+        if let existing = rootEntity.findEntity(named: "shadowDirectionalLight") {
+            existing.removeFromParent()
+        }
     }
 
     private func setupFallbackLighting() {
@@ -406,6 +549,68 @@ public struct CardPhysicsScene: View {
         }
     }
 
+    /// Hot-swaps felt and wood materials on the existing table entities.
+    private func updateTableMaterials() {
+        let texGen = ProceduralTextureGenerator.self
+        guard let tableRoot = rootEntity.findEntity(named: "table") else { return }
+
+        // Regenerate wood material
+        let woodRGB = settings.tableTheme.effectiveWoodRGB
+        var woodMaterial = PhysicallyBasedMaterial()
+        if let woodImg = texGen.woodAlbedo(baseR: woodRGB.r, baseG: woodRGB.g, baseB: woodRGB.b),
+           let woodTex = texGen.colorTexture(from: woodImg) {
+            woodMaterial.baseColor = .init(texture: .init(woodTex))
+        } else {
+            woodMaterial.baseColor = .init(tint: .init(red: CGFloat(woodRGB.r), green: CGFloat(woodRGB.g), blue: CGFloat(woodRGB.b), alpha: 1.0))
+        }
+        if let roughImg = texGen.woodRoughness(),
+           let roughTex = texGen.dataTexture(from: roughImg) {
+            woodMaterial.roughness = .init(texture: .init(roughTex))
+        } else {
+            woodMaterial.roughness = .init(floatLiteral: 0.6)
+        }
+        if let normImg = texGen.woodNormal(),
+           let normTex = texGen.normalTexture(from: normImg) {
+            woodMaterial.normal = .init(texture: .init(normTex))
+        }
+        woodMaterial.clearcoat = .init(floatLiteral: 1.0)
+        woodMaterial.clearcoatRoughness = .init(floatLiteral: 0.02)
+        woodMaterial.specular = .init(floatLiteral: 0.5)
+
+        // Apply wood material to all ModelEntity children of table except felt
+        for child in tableRoot.children {
+            guard let model = child as? ModelEntity,
+                  model.name != "feltSurface",
+                  model.model != nil else { continue }
+            model.model?.materials = [woodMaterial]
+        }
+
+        // Regenerate felt material
+        let feltRGB = settings.tableTheme.effectiveFeltRGB
+        var feltMaterial = PhysicallyBasedMaterial()
+        if let feltImg = texGen.feltAlbedo(baseR: feltRGB.r, baseG: feltRGB.g, baseB: feltRGB.b),
+           let feltTex = texGen.colorTexture(from: feltImg) {
+            feltMaterial.baseColor = .init(texture: .init(feltTex))
+        } else {
+            feltMaterial.baseColor = .init(tint: .init(red: CGFloat(feltRGB.r), green: CGFloat(feltRGB.g), blue: CGFloat(feltRGB.b), alpha: 1.0))
+        }
+        if let feltRoughImg = texGen.feltRoughness(),
+           let feltRoughTex = texGen.dataTexture(from: feltRoughImg) {
+            feltMaterial.roughness = .init(texture: .init(feltRoughTex))
+        } else {
+            feltMaterial.roughness = .init(floatLiteral: 0.95)
+        }
+        if let feltNormImg = texGen.feltNormal(),
+           let feltNormTex = texGen.normalTexture(from: feltNormImg) {
+            feltMaterial.normal = .init(texture: .init(feltNormTex))
+        }
+        feltMaterial.metallic = .init(floatLiteral: 0.0)
+
+        if let felt = tableRoot.findEntity(named: "feltSurface") as? ModelEntity {
+            felt.model?.materials = [feltMaterial]
+        }
+    }
+
     private func createDeck(count: Int = 12) {
         // Build a pool of cards by cycling through the full Euchre deck
         let allCards: [Card] = Suit.allCases.flatMap { suit in
@@ -423,7 +628,8 @@ public struct CardPhysicsScene: View {
                 card,
                 faceUp: false,
                 enableTap: tapEnabled,
-                curvature: 0.0
+                curvature: 0.0,
+                enableShadows: settings.enableCardShadows
             )
 
             // When tap gesture is enabled, add GestureComponent for tap-to-flip
@@ -445,6 +651,116 @@ public struct CardPhysicsScene: View {
 
             rootEntity.addChild(cardEntity)
             cards.append(cardEntity)
+
+            // Track card data and wear component for wear system
+            let entityId = ObjectIdentifier(cardEntity)
+            cardDataMap[entityId] = card
+            if settings.enableCardWear {
+                cardWearComponents[entityId] = CardWearComponent()
+            }
+        }
+    }
+
+    // MARK: - Card Wear
+
+    /// Handles collision events between entities, incrementing wear on card entities.
+    private func handleCollision(entityA: Entity, entityB: Entity) {
+        let idA = ObjectIdentifier(entityA)
+        let idB = ObjectIdentifier(entityB)
+
+        // Wear tracking
+        if settings.enableCardWear {
+            if let wearA = cardWearComponents[idA] {
+                let result = wearA.incrementWear()
+                if result.previousLevel != result.newLevel {
+                    applyWearTexture(to: entityA)
+                }
+            }
+            if let wearB = cardWearComponents[idB] {
+                let result = wearB.incrementWear()
+                if result.previousLevel != result.newLevel {
+                    applyWearTexture(to: entityB)
+                }
+            }
+        }
+
+        // Felt disturbance burst -- only for card-felt collisions
+        if settings.enableFeltDisturbance {
+            handleFeltCollision(entityA: entityA, entityB: entityB)
+        }
+    }
+
+    /// Creates a felt disturbance burst if the collision is between a card and the felt surface.
+    /// Filters out card-card and card-rail collisions.
+    private func handleFeltCollision(entityA: Entity, entityB: Entity) {
+        let isFeltA = entityA.name == "feltSurface"
+        let isFeltB = entityB.name == "feltSurface"
+        let isCardA = cardDataMap[ObjectIdentifier(entityA)] != nil
+        let isCardB = cardDataMap[ObjectIdentifier(entityB)] != nil
+
+        // Only trigger on card-felt collisions
+        guard (isFeltA && isCardB) || (isFeltB && isCardA) else { return }
+
+        // Limit active bursts to prevent performance degradation
+        guard activeBurstEntities.count < 15 else { return }
+
+        // Use the card's position for the burst location
+        let cardEntity = isCardA ? entityA : entityB
+        let burstPosition = SIMD3<Float>(
+            cardEntity.position.x,
+            0.008,  // Just above felt surface
+            cardEntity.position.z
+        )
+
+        let burst = ParticleEffects.createFeltDisturbanceBurst(
+            at: burstPosition,
+            intensity: Float(settings.burstIntensity)
+        )
+        rootEntity.addChild(burst)
+        activeBurstEntities.append(burst)
+
+        // Auto-remove burst after its lifespan
+        Task {
+            try? await Task.sleep(for: .seconds(0.6))
+            burst.removeFromParent()
+            activeBurstEntities.removeAll { $0 === burst }
+        }
+    }
+
+    /// Increments wear on a specific card entity and updates its texture if the level changed.
+    private func incrementCardWear(_ card: Entity) {
+        guard settings.enableCardWear else { return }
+        let entityId = ObjectIdentifier(card)
+        guard let wear = cardWearComponents[entityId] else { return }
+
+        let result = wear.incrementWear()
+        if result.previousLevel != result.newLevel {
+            applyWearTexture(to: card)
+        }
+    }
+
+    /// Applies the wear overlay texture to a card entity based on its current wear level.
+    private func applyWearTexture(to entity: Entity) {
+        let entityId = ObjectIdentifier(entity)
+        guard let wear = cardWearComponents[entityId],
+              let cardData = cardDataMap[entityId],
+              let modelEntity = entity as? ModelEntity,
+              wear.currentWearLevel != .none else { return }
+
+        let texGen = CardTextureGenerator.shared
+        let intensity = CGFloat(settings.wearIntensity)
+
+        if let wornTexture = texGen.textureWithWear(
+            for: cardData,
+            wearLevel: wear.currentWearLevel,
+            intensity: intensity
+        ) {
+            // Update face material (index 0)
+            if var materials = modelEntity.model?.materials as? [PhysicallyBasedMaterial],
+               !materials.isEmpty {
+                materials[0].baseColor = .init(texture: .init(wornTexture))
+                modelEntity.model?.materials = materials
+            }
         }
     }
 
@@ -455,6 +771,8 @@ public struct CardPhysicsScene: View {
         for card in cards { card.removeFromParent() }
         cards.removeAll()
         cardSideAssignments.removeAll()
+        cardWearComponents.removeAll()
+        cardDataMap.removeAll()
         for hand in handEntities { hand.removeFromParent() }
         handEntities.removeAll()
 
@@ -811,6 +1129,11 @@ public struct CardPhysicsScene: View {
         }
 
         // Phase 1 - Gather: slide all cards to the corner
+        // Increment wear on each card during gathering
+        for card in cards {
+            incrementCardWear(card)
+        }
+
         for (index, card) in cards.enumerated() {
             // Switch to kinematic mode for scripted animation
             if var physicsBody = card.components[PhysicsBodyComponent.self] {
@@ -995,6 +1318,9 @@ public struct CardPhysicsScene: View {
             return
         }
 
+        // Increment wear on flip interaction
+        incrementCardWear(card)
+
         // Determine current face orientation: face-up has ~pi rotation around X
         let currentRotation = card.orientation
         // Check if the card's local Y axis is pointing down (face-up) or up (face-down)
@@ -1133,6 +1459,8 @@ public struct CardPhysicsScene: View {
         }
         cards.removeAll()
         cardSideAssignments.removeAll()
+        cardWearComponents.removeAll()
+        cardDataMap.removeAll()
         createDeck()
     }
 }

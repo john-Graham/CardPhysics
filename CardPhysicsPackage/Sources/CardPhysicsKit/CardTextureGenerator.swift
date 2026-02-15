@@ -122,6 +122,38 @@ final class CardTextureGenerator {
         return texture
     }
 
+    /// Returns a card face texture composited with a wear overlay for the given level.
+    func textureWithWear(for card: Card, wearLevel: WearLevel, intensity: CGFloat = 1.0) -> TextureResource? {
+        guard wearLevel != .none else { return texture(for: card) }
+
+        let faceStyle = designConfig.faceStyle
+        let key = "worn_\(faceStyle.rawValue)_\(card.suit.name)_\(card.rank.name)_\(wearLevel.rawValue)_\(String(format: "%.2f", intensity))"
+        if let cached = cache[key] { return cached }
+
+        // Get the base card face image
+        guard let baseImage = renderCardFace(card, style: faceStyle) else { return nil }
+        let grainedImage = compositePaperGrain(over: baseImage) ?? baseImage
+
+        // Composite wear overlay
+        guard let wearOverlay = ProceduralTextureGenerator.cardWearOverlay(
+            level: wearLevel, intensity: intensity
+        ) else {
+            return texture(for: card)
+        }
+
+        let wornImage = compositeOverlay(wearOverlay, over: grainedImage) ?? grainedImage
+        let finalImage = applyRoundedCornerMask(to: wornImage) ?? wornImage
+
+        let texture = try? TextureResource(
+            image: finalImage,
+            options: .init(semantic: .color)
+        )
+        if let texture {
+            cache[key] = texture
+        }
+        return texture
+    }
+
     /// Clears all cached textures, forcing regeneration on next access
     func invalidateAll() {
         cache.removeAll()

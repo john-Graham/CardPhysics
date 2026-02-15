@@ -35,6 +35,7 @@ public class SceneCoordinator {
     public var fanInHandsAction: (() async -> Void)?
     public var updateInHandsPositionsAction: (() -> Void)?
     public var resetCardsAction: (() -> Void)?
+    public var updateTableMaterialsAction: (() -> Void)?
 
     public init() {}
 }
@@ -47,6 +48,10 @@ public struct CardPhysicsView: View {
     @State private var showInHandsSettings = false
     @State private var showCardDesign = false
     @State private var showRoomBackground = false
+    @State private var showTableTheme = false
+    @State private var showLighting = false
+    @State private var showCardEffects = false
+    @State private var showEnvironmentalEffects = false
     @State private var showCameraSettings = false
     @State private var sceneKey = UUID()
     @State private var cameraPosition: SIMD3<Float> = [0, 0.55, 0.41]
@@ -156,9 +161,29 @@ public struct CardPhysicsView: View {
                                 showCardDesign = true
                             }
 
+                            Button("Table Theme") {
+                                closeAllPanels()
+                                showTableTheme = true
+                            }
+
                             Button("Room Background") {
                                 closeAllPanels()
                                 showRoomBackground = true
+                            }
+
+                            Button("Lighting") {
+                                closeAllPanels()
+                                showLighting = true
+                            }
+
+                            Button("Card Effects") {
+                                closeAllPanels()
+                                showCardEffects = true
+                            }
+
+                            Button("Environmental Effects") {
+                                closeAllPanels()
+                                showEnvironmentalEffects = true
                             }
 
                             Button("Camera") {
@@ -256,12 +281,52 @@ public struct CardPhysicsView: View {
                 )
                 .transition(.move(edge: .trailing))
             }
+
+            // Table Theme Panel
+            if showTableTheme {
+                TableThemePanel(
+                    settings: settings,
+                    isPresented: $showTableTheme
+                )
+                .transition(.move(edge: .trailing))
+            }
+
+            // Lighting Panel
+            if showLighting {
+                LightingPanel(
+                    settings: settings,
+                    isPresented: $showLighting
+                )
+                .transition(.move(edge: .trailing))
+            }
+
+            // Card Effects Panel
+            if showCardEffects {
+                CardEffectsPanel(
+                    settings: settings,
+                    isPresented: $showCardEffects
+                )
+                .transition(.move(edge: .trailing))
+            }
+
+            // Environmental Effects Panel
+            if showEnvironmentalEffects {
+                EnvironmentalEffectsPanel(
+                    settings: settings,
+                    isPresented: $showEnvironmentalEffects
+                )
+                .transition(.move(edge: .trailing))
+            }
         }
         .animation(.easeInOut, value: showDealSettings)
         .animation(.easeInOut, value: showPickUpSettings)
         .animation(.easeInOut, value: showInHandsSettings)
         .animation(.easeInOut, value: showCardDesign)
         .animation(.easeInOut, value: showRoomBackground)
+        .animation(.easeInOut, value: showTableTheme)
+        .animation(.easeInOut, value: showLighting)
+        .animation(.easeInOut, value: showCardEffects)
+        .animation(.easeInOut, value: showEnvironmentalEffects)
         .animation(.easeInOut, value: showCameraSettings)
         .persistentSystemOverlays(.hidden)
     }
@@ -292,6 +357,10 @@ public struct CardPhysicsView: View {
         showInHandsSettings = false
         showCardDesign = false
         showRoomBackground = false
+        showTableTheme = false
+        showLighting = false
+        showCardEffects = false
+        showEnvironmentalEffects = false
         showCameraSettings = false
     }
 }
@@ -1140,6 +1209,466 @@ struct RoomBackgroundPanel: View {
 
         settings.customRoomImageFilename = filename
         settings.roomEnvironment = .customImage
+    }
+}
+
+struct TableThemePanel: View {
+    @Bindable var settings: PhysicsSettings
+    @Binding var isPresented: Bool
+
+    private var theme: TableThemeSettings {
+        settings.tableTheme
+    }
+
+    var body: some View {
+        HStack {
+            Spacer()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Header
+                    HStack {
+                        Text("Table Theme")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                        Spacer()
+                        Button("Done") {
+                            isPresented = false
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    }
+
+                    Divider()
+
+                    // Felt Color Section
+                    Text("Felt Color")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+
+                    // Preset swatches
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(FeltColor.allCases, id: \.self) { felt in
+                                Button {
+                                    theme.useCustomFelt = false
+                                    theme.feltColor = felt
+                                } label: {
+                                    VStack(spacing: 4) {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(felt.swatchColor)
+                                            .frame(width: 40, height: 30)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 4)
+                                                    .strokeBorder(Color.white.opacity(0.5), lineWidth: 1)
+                                            )
+                                        Text(felt.rawValue)
+                                            .font(.system(size: 9))
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(4)
+                                    .glassEffect(
+                                        .regular.tint(
+                                            !theme.useCustomFelt && theme.feltColor == felt
+                                                ? Color.blue.opacity(0.5)
+                                                : Color.clear
+                                        ),
+                                        in: .rect(cornerRadius: 6)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Custom felt toggle
+                    Toggle(isOn: Bindable(theme).useCustomFelt) {
+                        Text("Custom Color")
+                            .font(.caption)
+                    }
+
+                    if theme.useCustomFelt {
+                        feltCustomColorSliders
+                    }
+
+                    Divider()
+
+                    // Wood Finish Section
+                    Text("Wood Finish")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+
+                    // Preset swatches
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(WoodFinish.allCases, id: \.self) { wood in
+                                Button {
+                                    theme.useCustomWood = false
+                                    theme.woodFinish = wood
+                                } label: {
+                                    VStack(spacing: 4) {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(wood.swatchColor)
+                                            .frame(width: 40, height: 30)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 4)
+                                                    .strokeBorder(Color.white.opacity(0.5), lineWidth: 1)
+                                            )
+                                        Text(wood.rawValue)
+                                            .font(.system(size: 9))
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(4)
+                                    .glassEffect(
+                                        .regular.tint(
+                                            !theme.useCustomWood && theme.woodFinish == wood
+                                                ? Color.blue.opacity(0.5)
+                                                : Color.clear
+                                        ),
+                                        in: .rect(cornerRadius: 6)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Custom wood toggle
+                    Toggle(isOn: Bindable(theme).useCustomWood) {
+                        Text("Custom Color")
+                            .font(.caption)
+                    }
+
+                    if theme.useCustomWood {
+                        woodCustomColorSliders
+                    }
+                }
+                .padding(12)
+            }
+            .frame(width: 280)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .padding(.trailing, 8)
+            .padding(.vertical, 8)
+        }
+    }
+
+    // MARK: - Custom Felt Color Sliders
+
+    private var feltCustomColorSliders: some View {
+        VStack(spacing: 6) {
+            HStack {
+                Text("R")
+                    .font(.caption2)
+                    .frame(width: 14)
+                Slider(value: Bindable(theme).customFeltR, in: 0...0.5)
+                Text(String(format: "%.2f", theme.customFeltR))
+                    .font(.caption2)
+                    .frame(width: 32)
+            }
+            HStack {
+                Text("G")
+                    .font(.caption2)
+                    .frame(width: 14)
+                Slider(value: Bindable(theme).customFeltG, in: 0...0.5)
+                Text(String(format: "%.2f", theme.customFeltG))
+                    .font(.caption2)
+                    .frame(width: 32)
+            }
+            HStack {
+                Text("B")
+                    .font(.caption2)
+                    .frame(width: 14)
+                Slider(value: Bindable(theme).customFeltB, in: 0...0.5)
+                Text(String(format: "%.2f", theme.customFeltB))
+                    .font(.caption2)
+                    .frame(width: 32)
+            }
+
+            // Preview swatch
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(red: theme.customFeltR, green: theme.customFeltG, blue: theme.customFeltB))
+                .frame(height: 24)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
+                )
+        }
+    }
+
+    // MARK: - Custom Wood Color Sliders
+
+    private var woodCustomColorSliders: some View {
+        VStack(spacing: 6) {
+            HStack {
+                Text("R")
+                    .font(.caption2)
+                    .frame(width: 14)
+                Slider(value: Bindable(theme).customWoodR, in: 0...0.7)
+                Text(String(format: "%.2f", theme.customWoodR))
+                    .font(.caption2)
+                    .frame(width: 32)
+            }
+            HStack {
+                Text("G")
+                    .font(.caption2)
+                    .frame(width: 14)
+                Slider(value: Bindable(theme).customWoodG, in: 0...0.5)
+                Text(String(format: "%.2f", theme.customWoodG))
+                    .font(.caption2)
+                    .frame(width: 32)
+            }
+            HStack {
+                Text("B")
+                    .font(.caption2)
+                    .frame(width: 14)
+                Slider(value: Bindable(theme).customWoodB, in: 0...0.4)
+                Text(String(format: "%.2f", theme.customWoodB))
+                    .font(.caption2)
+                    .frame(width: 32)
+            }
+
+            // Preview swatch
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(red: theme.customWoodR, green: theme.customWoodG, blue: theme.customWoodB))
+                .frame(height: 24)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
+                )
+        }
+    }
+}
+
+struct LightingPanel: View {
+    @Bindable var settings: PhysicsSettings
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        HStack {
+            Spacer()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Header
+                    HStack {
+                        Text("Lighting")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                        Spacer()
+                        Button("Done") {
+                            isPresented = false
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    }
+
+                    Divider()
+
+                    // Shadow toggle
+                    Toggle(isOn: $settings.enableCardShadows) {
+                        Text("Card Shadows")
+                            .font(.subheadline)
+                    }
+
+                    if settings.enableCardShadows {
+                        // Quality picker
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Shadow Quality")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Picker("Quality", selection: $settings.shadowQuality) {
+                                ForEach(ShadowQuality.allCases, id: \.self) { quality in
+                                    Text(quality.rawValue).tag(quality)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+
+                        // Performance warning
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.caption2)
+                                .foregroundColor(.yellow)
+                            Text("Shadows may reduce performance on older devices.")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.top, 4)
+                    }
+                }
+                .padding(12)
+            }
+            .frame(width: 240)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .padding(.trailing, 8)
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+struct CardEffectsPanel: View {
+    @Bindable var settings: PhysicsSettings
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        HStack {
+            Spacer()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Header
+                    HStack {
+                        Text("Card Effects")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                        Spacer()
+                        Button("Done") {
+                            isPresented = false
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    }
+
+                    Divider()
+
+                    // Wear toggle
+                    Toggle(isOn: $settings.enableCardWear) {
+                        Text("Wear & Tear")
+                            .font(.subheadline)
+                    }
+
+                    if settings.enableCardWear {
+                        // Intensity slider
+                        SliderSetting(
+                            label: "Wear Intensity",
+                            value: $settings.wearIntensity,
+                            range: 0.5...2.0,
+                            unit: "x"
+                        )
+
+                        // Info text
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Cards accumulate wear from:")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Text("  - Collisions with table and other cards")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Text("  - Tap-to-flip interactions")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Text("  - Gather and pick up actions")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.top, 4)
+
+                        // Note about reset
+                        HStack(spacing: 6) {
+                            Image(systemName: "info.circle")
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                            Text("Reset or re-deal cards to clear wear.")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                .padding(12)
+            }
+            .frame(width: 240)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .padding(.trailing, 8)
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+struct EnvironmentalEffectsPanel: View {
+    @Bindable var settings: PhysicsSettings
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        HStack {
+            Spacer()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Header
+                    HStack {
+                        Text("Environmental Effects")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                        Spacer()
+                        Button("Done") {
+                            isPresented = false
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    }
+
+                    Divider()
+
+                    // Dust Motes Section
+                    Toggle(isOn: $settings.enableDustMotes) {
+                        Text("Dust Motes")
+                            .font(.subheadline)
+                    }
+
+                    if settings.enableDustMotes {
+                        SliderSetting(
+                            label: "Dust Density",
+                            value: $settings.dustDensity,
+                            range: 0.5...2.0,
+                            unit: "x"
+                        )
+
+                        Text("Floating dust particles above the table surface.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Divider()
+
+                    // Felt Disturbance Section
+                    Toggle(isOn: $settings.enableFeltDisturbance) {
+                        Text("Felt Disturbance")
+                            .font(.subheadline)
+                    }
+
+                    if settings.enableFeltDisturbance {
+                        SliderSetting(
+                            label: "Burst Intensity",
+                            value: $settings.burstIntensity,
+                            range: 0.5...2.0,
+                            unit: "x"
+                        )
+
+                        Text("Particle bursts when cards land on the felt.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    // Performance warning
+                    if settings.enableDustMotes || settings.enableFeltDisturbance {
+                        Divider()
+
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.caption2)
+                                .foregroundColor(.yellow)
+                            Text("Particle effects may reduce performance on older devices.")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.top, 4)
+                    }
+                }
+                .padding(12)
+            }
+            .frame(width: 240)
+            .glassEffect(.regular, in: .rect(cornerRadius: 12))
+            .padding(.trailing, 8)
+            .padding(.vertical, 8)
+        }
     }
 }
 

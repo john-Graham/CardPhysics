@@ -40,7 +40,7 @@ enum CurvedCardMesh {
         func frontNormal(_ nx: Float) -> SIMD3<Float> {
             let dydx = -curvature * (-2.0 * nx) * (2.0 / width)
             let tangentX = SIMD3<Float>(1, dydx, 0)
-            let tangentZ = SIMD3<Float>(0, 0, -1)
+            let tangentZ = SIMD3<Float>(0, 0, 1)
             let n = simd_normalize(simd_cross(tangentZ, tangentX))
             return n
         }
