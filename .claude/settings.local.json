@@ -16,7 +16,15 @@
       "Bash(xcrun xctrace:*)",
       "Bash(xcodebuild:*)",
       "Bash(xcrun devicectl device install app:*)",
-      "Bash(xcrun devicectl device process launch:*)"
+      "Bash(xcrun devicectl device process launch:*)",
+      "Bash(gh issue view:*)",
+      "Bash(git checkout:*)",
+      "Bash(python3:*)",
+      "Bash(wc:*)",
+      "Bash(xcrun simctl boot:*)",
+      "Bash(xcrun devicectl list devices:*)",
+      "Bash(head:*)",
+      "Bash(sort:*)"
     ]
   }
 }
