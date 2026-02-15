@@ -48,6 +48,9 @@ public enum CardBackStyle: String, CaseIterable, Codable, Sendable {
     case royalBlue
     case forestGreen
     case midnight
+    case bicycleRed
+    case bicycleBlue
+    case french
     case customImage
     case selfie
 
@@ -57,6 +60,9 @@ public enum CardBackStyle: String, CaseIterable, Codable, Sendable {
         case .royalBlue: return "Royal Blue"
         case .forestGreen: return "Forest Green"
         case .midnight: return "Midnight"
+        case .bicycleRed: return "Bicycle Red"
+        case .bicycleBlue: return "Bicycle Blue"
+        case .french: return "French"
         case .customImage: return "Photo"
         case .selfie: return "Selfie"
         }
@@ -84,6 +90,21 @@ public enum CardBackStyle: String, CaseIterable, Codable, Sendable {
                 Color(red: 0.10, green: 0.10, blue: 0.20),
                 Color(red: 0.05, green: 0.05, blue: 0.12)
             )
+        case .bicycleRed:
+            return (
+                Color(red: 0.80, green: 0.12, blue: 0.15),
+                Color(red: 0.65, green: 0.08, blue: 0.10)
+            )
+        case .bicycleBlue:
+            return (
+                Color(red: 0.12, green: 0.25, blue: 0.70),
+                Color(red: 0.08, green: 0.15, blue: 0.55)
+            )
+        case .french:
+            return (
+                Color(red: 0.15, green: 0.30, blue: 0.60),
+                Color(red: 0.10, green: 0.20, blue: 0.45)
+            )
         case .customImage, .selfie:
             // Fallback gradient for custom/selfie (not used when image is loaded)
             return (
@@ -99,7 +120,7 @@ public enum CardBackStyle: String, CaseIterable, Codable, Sendable {
 
     /// Styles that appear in the preset picker (not photo/selfie)
     public static var presets: [CardBackStyle] {
-        [.classicMaroon, .royalBlue, .forestGreen, .midnight]
+        [.classicMaroon, .royalBlue, .forestGreen, .midnight, .bicycleRed, .bicycleBlue, .french]
     }
 }
 

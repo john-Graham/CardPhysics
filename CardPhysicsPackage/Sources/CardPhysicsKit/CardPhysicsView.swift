@@ -135,22 +135,27 @@ public struct CardPhysicsView: View {
                             }
 
                             Button("Deal Settings") {
+                                closeAllPanels()
                                 showDealSettings = true
                             }
 
                             Button("Pick Up Settings") {
+                                closeAllPanels()
                                 showPickUpSettings = true
                             }
 
                             Button("Card Design") {
+                                closeAllPanels()
                                 showCardDesign = true
                             }
 
                             Button("Room Background") {
+                                closeAllPanels()
                                 showRoomBackground = true
                             }
 
                             Button("Camera") {
+                                closeAllPanels()
                                 showCameraSettings = true
                             }
 
@@ -261,6 +266,14 @@ public struct CardPhysicsView: View {
     private func resetScene() {
         sceneKey = UUID()
         coordinator = SceneCoordinator()
+    }
+
+    private func closeAllPanels() {
+        showDealSettings = false
+        showPickUpSettings = false
+        showCardDesign = false
+        showRoomBackground = false
+        showCameraSettings = false
     }
 }
 
@@ -652,34 +665,36 @@ struct CardDesignPanel: View {
     private var faceStylePicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Preset style thumbnails
-            HStack(spacing: 8) {
-                ForEach(CardFaceStyle.presets, id: \.self) { style in
-                    Button {
-                        designConfig.faceStyle = style
-                        designConfig.save()
-                        onDesignChanged()
-                    } label: {
-                        VStack(spacing: 4) {
-                            CardView(
-                                card: Card(suit: .hearts, rank: .ace),
-                                isFaceUp: true,
-                                size: .small,
-                                faceStyle: style
-                            )
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(CardFaceStyle.presets, id: \.self) { style in
+                        Button {
+                            designConfig.faceStyle = style
+                            designConfig.save()
+                            onDesignChanged()
+                        } label: {
+                            VStack(spacing: 4) {
+                                CardView(
+                                    card: Card(suit: .hearts, rank: .ace),
+                                    isFaceUp: true,
+                                    size: .small,
+                                    faceStyle: style
+                                )
 
-                            Text(style.displayName)
-                                .font(.system(size: 9))
-                                .foregroundColor(.white)
+                                Text(style.displayName)
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.white)
+                            }
+                            .padding(4)
+                            .glassEffect(
+                                .regular.tint(
+                                    designConfig.faceStyle == style
+                                        ? Color.blue.opacity(0.5)
+                                        : Color.clear
+                                ),
+                                in: .rect(cornerRadius: 6)
+                            )
                         }
-                        .padding(4)
-                        .glassEffect(
-                            .regular.tint(
-                                designConfig.faceStyle == style
-                                    ? Color.blue.opacity(0.5)
-                                    : Color.clear
-                            ),
-                            in: .rect(cornerRadius: 6)
-                        )
                     }
                 }
             }
@@ -728,36 +743,38 @@ struct CardDesignPanel: View {
     private var backStylePicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Preset color swatches
-            HStack(spacing: 8) {
-                ForEach(CardBackStyle.presets, id: \.self) { style in
-                    Button {
-                        designConfig.backStyle = style
-                        designConfig.save()
-                        onDesignChanged()
-                    } label: {
-                        VStack(spacing: 4) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(style.swatchColor)
-                                .frame(width: 40, height: 56)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .strokeBorder(Color.white.opacity(0.5), lineWidth: 1)
-                                )
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(CardBackStyle.presets, id: \.self) { style in
+                        Button {
+                            designConfig.backStyle = style
+                            designConfig.save()
+                            onDesignChanged()
+                        } label: {
+                            VStack(spacing: 4) {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(style.swatchColor)
+                                    .frame(width: 40, height: 56)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .strokeBorder(Color.white.opacity(0.5), lineWidth: 1)
+                                    )
 
-                            Text(style.displayName)
-                                .font(.system(size: 9))
-                                .foregroundColor(.white)
-                                .lineLimit(1)
+                                Text(style.displayName)
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                            }
+                            .padding(4)
+                            .glassEffect(
+                                .regular.tint(
+                                    designConfig.backStyle == style
+                                        ? Color.blue.opacity(0.5)
+                                        : Color.clear
+                                ),
+                                in: .rect(cornerRadius: 6)
+                            )
                         }
-                        .padding(4)
-                        .glassEffect(
-                            .regular.tint(
-                                designConfig.backStyle == style
-                                    ? Color.blue.opacity(0.5)
-                                    : Color.clear
-                            ),
-                            in: .rect(cornerRadius: 6)
-                        )
                     }
                 }
             }
