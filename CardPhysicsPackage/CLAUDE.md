@@ -8,17 +8,18 @@ Local Swift Package providing the CardPhysicsKit framework -- a 3D card physics 
 CardPhysicsPackage/
 ├── Package.swift
 ├── Sources/
-│   └── CardPhysicsKit/
-│       ├── Resources/         # HDRI environment (room_bg.exr)
-│       ├── Card.swift
-│       ├── CardEntity3D.swift
-│       ├── CardPhysicsScene.swift
-│       ├── CardPhysicsView.swift
-│       ├── CardTextureGenerator.swift
-│       ├── CardView.swift
-│       ├── CurvedCardMesh.swift
-│       ├── PhysicsSettings.swift
-│       └── ProceduralTextureGenerator.swift
+│   └── CardPhysicsKit/       # Modular folder-based architecture (41 files)
+│       ├── Core/Models/      # Card, CardWearComponent
+│       ├── Configuration/    # Settings, SceneCoordinator, themes
+│       ├── Scene/            # CardPhysicsScene + Setup/Environment extensions
+│       ├── Entities/         # CardEntity3D, HandEntity3D
+│       ├── Geometry/         # CurvedCardMesh
+│       ├── Rendering/        # Texture generators, CardView
+│       ├── Animations/       # Scene extensions: Wear, Dealing, PickUp, InHands
+│       ├── Effects/          # ParticleEffects, SkyboxEntity
+│       ├── UI/               # CardPhysicsView + Components/ + Panels/
+│       ├── Storage/          # Image storage utilities
+│       └── Resources/        # HDRI environment (room_bg.exr)
 └── Tests/
     └── CardPhysicsKitTests/
         └── CardPhysicsKitTests.swift
@@ -68,11 +69,17 @@ swift test
 Or in Xcode: Cmd+B to build, Cmd+U to test.
 
 ## Architecture Summary
-- **Data models**: `Card`, `Suit`, `Rank`, `PhysicsSettings` -- pure data, `Sendable`
-- **3D entities**: `CardEntity3D` (factory), `CurvedCardMesh` (procedural mesh)
-- **Scene**: `CardPhysicsScene` (RealityKit scene with table, lighting, physics)
-- **Views**: `CardPhysicsView` (SwiftUI wrapper with controls), `CardView` (2D card)
-- **Textures**: `CardTextureGenerator` (card faces/backs), `ProceduralTextureGenerator` (table PBR)
-- **Coordination**: `SceneCoordinator` bridges SwiftUI controls to RealityKit scene actions
+- **Core/Models**: `Card`, `Suit`, `Rank`, `CardWearComponent` -- pure data, `Sendable`
+- **Configuration**: `PhysicsSettings`, `SceneCoordinator`, `TableThemeSettings`, `RoomEnvironment` -- observable settings
+- **Scene**: `CardPhysicsScene` (217 lines) + 2 extensions (Setup, Environment) for scene management
+- **Entities**: `CardEntity3D` (factory), `HandEntity3D` -- 3D entity creation
+- **Geometry**: `CurvedCardMesh` -- procedural parabolic mesh generation
+- **Rendering**: `CardTextureGenerator`, `ProceduralTextureGenerator`, `CardView` -- PBR textures and 2D views
+- **Animations**: 4 scene extensions (Wear, Dealing, PickUp, InHands) -- animation logic split from scene
+- **Effects**: `ParticleEffects`, `SkyboxEntity` -- visual effects
+- **UI**: `CardPhysicsView` (328 lines) + 4 Components + 11 Panels -- modular SwiftUI interface
+- **Storage**: Image persistence for custom card faces/backs and room backgrounds
 
-Key patterns: Factory pattern (CardEntity3D), Singleton with caching (CardTextureGenerator), Coordinator pattern (SceneCoordinator), Observable state (@Observable PhysicsSettings).
+**Key patterns**: Modular folder structure (feature-based), Extensions for code splitting (6 scene extensions), Factory pattern (CardEntity3D), Singleton with caching (CardTextureGenerator), Coordinator pattern (SceneCoordinator), Observable state (@Observable).
+
+**File reductions**: CardPhysicsView: 1,797 → 328 lines (82% reduction). CardPhysicsScene: 1,466 → 217 lines (85% reduction).
