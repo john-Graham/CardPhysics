@@ -11,31 +11,18 @@ public func fanCardsInHands() async {
         sideCards[side, default: []].append(card)
     }
 
-    // Fan parameters
-    let fanRadius: Float = 0.35  // Radius of the arc
-    let fanSpread: Float = 0.7   // Total angular spread in radians (~40 degrees)
-    let cardHeight: Float = 0.15 // How much to lift cards
-    let cardTilt: Float = 0.3    // Forward tilt of cards (radians)
+    let cardHeight: Float = 0.15 // How much to lift cards off table
 
-    // Base positions for each hand (closer to player than stack positions)
-    let handPositions: [Int: SIMD3<Float>] = [
+    // Stack positions for each hand (at table edge, closer to player)
+    let stackPositions: [Int: SIMD3<Float>] = [
         1: [0, cardHeight, 0.45],      // Bottom player (closest to viewer)
         2: [-0.65, cardHeight, 0],     // Left player
         3: [0, cardHeight, -0.45],     // Top player (farthest)
         4: [0.65, cardHeight, 0]       // Right player
     ]
 
-    // Base rotations for each side (Y-axis rotation to face player)
-    let baseYRotations: [Int: Float] = [
-        1: 0,           // Bottom: facing viewer (0 degrees)
-        2: .pi / 2,     // Left: rotated 90 degrees
-        3: .pi,         // Top: rotated 180 degrees
-        4: -.pi / 2     // Right: rotated -90 degrees
-    ]
-
     for (side, cardsInSide) in sideCards {
-        guard let centerPos = handPositions[side],
-              let baseYRot = baseYRotations[side] else { continue }
+        guard let stackCenter = stackPositions[side] else { continue }
 
         let cardCount = cardsInSide.count
         guard cardCount > 0 else { continue }
@@ -48,63 +35,63 @@ public func fanCardsInHands() async {
             }
             card.components[PhysicsMotionComponent.self] = nil
 
-            // Calculate fan angle for this card
-            // Center the fan around 0, spreading cards evenly
-            let normalizedIndex = Float(index) - Float(cardCount - 1) / 2.0
-            let fanAngle = (normalizedIndex / Float(max(cardCount - 1, 1))) * fanSpread
+            // STEP 1: Stack cards vertically (perpendicular to table)
+            // - Cards stand STRAIGHT UP (perpendicular to table, no tilt)
+            // - Face pointing outward toward player
+            // - Cards stacked with thickness offset (0.0015m per card)
 
-            // Calculate position on the arc
-            // The arc is in the local XZ plane before rotation
-            let localX = sin(fanAngle) * fanRadius
-            let localZ = -cos(fanAngle) * fanRadius + fanRadius  // Offset so arc curves toward player
+            // Base vertical orientation:
+            // Rotate 90° around X to stand card up (was lying flat, now vertical)
+            let standUpRotation = simd_quatf(angle: .pi / 2, axis: [1, 0, 0])
 
-            // Transform to world coordinates based on side
-            let position: SIMD3<Float>
+            // Rotate around Y to face the player position
+            let faceOutwardRotation: simd_quatf
+            let stackDirection: SIMD3<Float> // Direction to offset cards in stack
+
             switch side {
-            case 1: // Bottom
-                position = SIMD3<Float>(
-                    centerPos.x + localX,
-                    centerPos.y,
-                    centerPos.z + localZ
-                )
-            case 2: // Left
-                position = SIMD3<Float>(
-                    centerPos.x + localZ,
-                    centerPos.y,
-                    centerPos.z + localX
-                )
-            case 3: // Top
-                position = SIMD3<Float>(
-                    centerPos.x - localX,
-                    centerPos.y,
-                    centerPos.z - localZ
-                )
-            case 4: // Right
-                position = SIMD3<Float>(
-                    centerPos.x - localZ,
-                    centerPos.y,
-                    centerPos.z - localX
-                )
+            case 1: // Bottom player - face toward camera (+Z)
+                // After standing up, card faces -Z, so rotate 180° around Y to face +Z
+                faceOutwardRotation = simd_quatf(angle: .pi, axis: [0, 1, 0])
+                // Stack toward table center (backs point -Z)
+                stackDirection = [0, 0, -1]
+
+            case 2: // Left player - face toward left (-X)
+                // After standing up, rotate 90° around Y to face left
+                faceOutwardRotation = simd_quatf(angle: .pi / 2, axis: [0, 1, 0])
+                // Stack toward table center (backs point +X)
+                stackDirection = [1, 0, 0]
+
+            case 3: // Top player - face away from camera (-Z)
+                // After standing up, card already faces -Z, no additional rotation
+                faceOutwardRotation = simd_quatf(angle: 0, axis: [0, 1, 0])
+                // Stack toward camera (backs point +Z)
+                stackDirection = [0, 0, 1]
+
+            case 4: // Right player - face toward right (+X)
+                // After standing up, rotate -90° around Y to face right
+                faceOutwardRotation = simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])
+                // Stack toward table center (backs point -X)
+                stackDirection = [-1, 0, 0]
+
             default:
-                position = centerPos
+                faceOutwardRotation = simd_quatf(angle: 0, axis: [0, 1, 0])
+                stackDirection = [0, 0, 0]
             }
 
-            // Calculate rotation
-            // Start with face-up, then apply tilt, then apply fan rotation, then apply side rotation
-            let faceUpQuat = simd_quatf(angle: .pi, axis: [1, 0, 0])  // Face-up
-            let tiltQuat = simd_quatf(angle: cardTilt, axis: [1, 0, 0])  // Tilt cards back
-            let fanQuat = simd_quatf(angle: fanAngle, axis: [0, 1, 0])  // Fan spread
-            let sideQuat = simd_quatf(angle: baseYRot, axis: [0, 1, 0])  // Orient to side
+            // Combine: first stand up, then rotate to face outward (NO TILT)
+            let stackedRotation = faceOutwardRotation * standUpRotation
 
-            // Combine rotations: side * fan * tilt * faceUp
-            let finalRotation = sideQuat * fanQuat * tiltQuat * faceUpQuat
+            // Stack position with thickness offset (0.0015m per card for visibility)
+            let cardThickness: Float = 0.0015
+            let stackOffset = stackDirection * (Float(index) * cardThickness)
+            let stackPosition = stackCenter + stackOffset
 
-            // Animate card to fanned position
+            // Animate card to stacked vertical position
             card.move(
                 to: Transform(
                     scale: card.scale,
-                    rotation: finalRotation,
-                    translation: position
+                    rotation: stackedRotation,
+                    translation: stackPosition
                 ),
                 relativeTo: nil,
                 duration: 0.6,
@@ -113,8 +100,10 @@ public func fanCardsInHands() async {
         }
     }
 
-    // Wait for animation to complete
+    // Wait for stacking animation to complete
     try? await Task.sleep(for: .seconds(0.6))
+
+    // TODO: STEP 2 will fan them out from this known stacked orientation
 }
 
 /// Flips a card 180 degrees around the X axis with a short animation.
@@ -196,60 +185,105 @@ internal func updateInHandsCardPositions() {
             let verticalOffset = sideSettings.verticalSpacing
             let arcRadius = sideSettings.arcRadius
 
-            // Calculate position in fan (centered around middle card)
+            // Fan from bottom of deck: first card at center, others spread outward
+            // Cards fan symmetrically around center (middle card straight)
             let normalizedIndex = Float(cardIndex) / Float(max(cardsInSide.count - 1, 1))
-            let fanProgress = normalizedIndex - 0.5
+            let fanProgress = normalizedIndex - 0.5  // -0.5 to 0.5 (centered)
             let arcAngle = fanProgress * fanAngle
 
-            // Position based on side orientation
-            var cardPosition: SIMD3<Float>
-            var cardRotation: simd_quatf
+            // Base vertical orientation (same as fanCardsInHands):
+            // 1. Stand card up perpendicular to table
+            let standUpRotation = simd_quatf(angle: .pi / 2, axis: [1, 0, 0])
 
-            // Quaternion components for proper card orientation
-            let faceUpQuat = simd_quatf(angle: .pi, axis: [1, 0, 0])
+            // 2. Rotate to face player position
+            let faceOutwardRotation: simd_quatf
+            let stackDirection: SIMD3<Float>
+
+            switch side {
+            case 1: // Bottom player - face toward camera (+Z)
+                faceOutwardRotation = simd_quatf(angle: .pi, axis: [0, 1, 0])
+                stackDirection = [0, 0, -1]
+
+            case 2: // Left player - face toward left (-X)
+                faceOutwardRotation = simd_quatf(angle: .pi / 2, axis: [0, 1, 0])
+                stackDirection = [1, 0, 0]
+
+            case 3: // Top player - face away from camera (-Z)
+                faceOutwardRotation = simd_quatf(angle: 0, axis: [0, 1, 0])
+                stackDirection = [0, 0, 1]
+
+            case 4: // Right player - face toward right (+X)
+                faceOutwardRotation = simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])
+                stackDirection = [-1, 0, 0]
+
+            default:
+                faceOutwardRotation = simd_quatf(angle: 0, axis: [0, 1, 0])
+                stackDirection = [0, 0, 0]
+            }
+
+            // 3. Apply slider adjustments from vertical base
             let tiltQuat = simd_quatf(angle: sideSettings.tiltAngle, axis: [1, 0, 0])
             let fanQuat = simd_quatf(angle: arcAngle, axis: [0, 1, 0])
             let offsetQuat = simd_quatf(angle: sideSettings.rotationOffset, axis: [0, 1, 0])
 
+            // Combine rotations: face outward, then fan, then tilt, then rotation offset, then stand up
+            let cardRotation = offsetQuat * fanQuat * tiltQuat * faceOutwardRotation * standUpRotation
+
+            // Calculate position: pivot from bottom center of deck
+            // Bottom center is at fanCenter - cards fan out from there
+            let cardThickness: Float = 0.0015
+
+            // Start at pivot point (bottom center of deck)
+            let pivotPoint = fanCenter
+
+            // Calculate offset from pivot based on fan angle and arc radius
+            // Each card rotates around the pivot and moves outward along the arc
+            var cardPosition: SIMD3<Float>
+
             switch side {
-            case 1: // Bottom
+            case 1: // Bottom - fan spreads left/right (+/-X), arc extends toward player (+Z)
+                let fanX = sin(arcAngle) * arcRadius
+                let fanZ = (1.0 - cos(arcAngle)) * arcRadius  // Arc toward player
                 cardPosition = SIMD3(
-                    fanCenter.x + sin(arcAngle) * arcRadius,
-                    fanCenter.y + Float(cardIndex) * verticalOffset,
-                    fanCenter.z - cos(arcAngle) * arcRadius + arcRadius
+                    pivotPoint.x + fanX,
+                    pivotPoint.y + Float(cardIndex) * verticalOffset,
+                    pivotPoint.z + fanZ
                 )
-                cardRotation = offsetQuat * fanQuat * tiltQuat * faceUpQuat
+                // Stack offset perpendicular to face
+                cardPosition += stackDirection * (Float(cardIndex) * cardThickness)
 
-            case 2: // Left
+            case 2: // Left - fan spreads up/down (+/-Z), arc extends toward player (-X)
+                let fanZ = sin(arcAngle) * arcRadius
+                let fanX = -(1.0 - cos(arcAngle)) * arcRadius  // Arc toward player (left)
                 cardPosition = SIMD3(
-                    fanCenter.x + cos(arcAngle) * arcRadius - arcRadius,
-                    fanCenter.y + Float(cardIndex) * verticalOffset,
-                    fanCenter.z + sin(arcAngle) * arcRadius
+                    pivotPoint.x + fanX,
+                    pivotPoint.y + Float(cardIndex) * verticalOffset,
+                    pivotPoint.z + fanZ
                 )
-                let sideQuat2 = simd_quatf(angle: .pi / 2, axis: [0, 1, 0])
-                cardRotation = sideQuat2 * offsetQuat * fanQuat * tiltQuat * faceUpQuat
+                cardPosition += stackDirection * (Float(cardIndex) * cardThickness)
 
-            case 3: // Top
+            case 3: // Top - fan spreads left/right (+/-X), arc extends toward player (-Z)
+                let fanX = sin(arcAngle) * arcRadius
+                let fanZ = -(1.0 - cos(arcAngle)) * arcRadius  // Arc toward player (away)
                 cardPosition = SIMD3(
-                    fanCenter.x - sin(arcAngle) * arcRadius,
-                    fanCenter.y + Float(cardIndex) * verticalOffset,
-                    fanCenter.z + cos(arcAngle) * arcRadius - arcRadius
+                    pivotPoint.x - fanX,  // Mirror X for top player
+                    pivotPoint.y + Float(cardIndex) * verticalOffset,
+                    pivotPoint.z + fanZ
                 )
-                let sideQuat3 = simd_quatf(angle: .pi, axis: [0, 1, 0])
-                cardRotation = sideQuat3 * offsetQuat * fanQuat * tiltQuat * faceUpQuat
+                cardPosition += stackDirection * (Float(cardIndex) * cardThickness)
 
-            case 4: // Right
+            case 4: // Right - fan spreads up/down (+/-Z), arc extends toward player (+X)
+                let fanZ = sin(arcAngle) * arcRadius
+                let fanX = (1.0 - cos(arcAngle)) * arcRadius  // Arc toward player (right)
                 cardPosition = SIMD3(
-                    fanCenter.x - cos(arcAngle) * arcRadius + arcRadius,
-                    fanCenter.y + Float(cardIndex) * verticalOffset,
-                    fanCenter.z - sin(arcAngle) * arcRadius
+                    pivotPoint.x + fanX,
+                    pivotPoint.y + Float(cardIndex) * verticalOffset,
+                    pivotPoint.z - fanZ  // Mirror Z for right player
                 )
-                let sideQuat4 = simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])
-                cardRotation = sideQuat4 * offsetQuat * fanQuat * tiltQuat * faceUpQuat
+                cardPosition += stackDirection * (Float(cardIndex) * cardThickness)
 
             default:
-                cardPosition = fanCenter
-                cardRotation = offsetQuat * faceUpQuat
+                cardPosition = pivotPoint
             }
 
             // Update card transform instantly (no animation for real-time feedback)

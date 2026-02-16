@@ -53,7 +53,7 @@ struct InHandsSettingsPanel: View {
                                 coordinator?.updateInHandsPositionsAction?()
                             }
                         ),
-                        range: 0...90,
+                        range: -60...60,
                         unit: "°"
                     )
 

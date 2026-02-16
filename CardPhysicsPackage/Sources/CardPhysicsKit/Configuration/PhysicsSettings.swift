@@ -4,8 +4,8 @@ import Foundation
 @Observable
 @MainActor
 public final class InHandsSideSettings: Sendable {
-    public var fanAngle: Float = .pi / 6  // Total fan angle (30 degrees)
-    public var tiltAngle: Float = 0.3     // Tilt back angle in radians (~17 degrees)
+    public var fanAngle: Float = 0.4      // Total fan angle (~23° spread for natural fan)
+    public var tiltAngle: Float = 0.52    // Tilt back angle in radians (~30° backward tilt for natural viewing)
     public var arcRadius: Float = 0.3     // Radius of the fan arc
     public var verticalSpacing: Float = 0.015  // Vertical spacing between cards
     public var rotationOffset: Float = 0.0  // Additional Y-axis rotation offset (for flipping face/back)
