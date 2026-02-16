@@ -102,8 +102,8 @@ internal func dealCardsInHands() async {
         let cardCount = sideCards.count
 
         for (cardIndex, card) in sideCards.enumerated() {
-            // Flip card face-up
-            card.orientation = simd_quatf(angle: .pi, axis: [1, 0, 0])
+            // Start cards face-down (will animate to final orientation)
+            card.orientation = simd_quatf(angle: 0, axis: [1, 0, 0])
 
             // Calculate fan arc parameters from per-side settings
             let sideSettings = settings.inHandsSettings(for: side)
@@ -123,7 +123,19 @@ internal func dealCardsInHands() async {
             var cardRotation: simd_quatf
 
             // Quaternion components for proper card orientation
-            let faceUpQuat = simd_quatf(angle: .pi, axis: [1, 0, 0])  // Face-up
+            // Side-specific base rotation: Side 1 shows faces, Sides 2-4 show backs
+            let baseRotation: simd_quatf
+            switch side {
+            case 1:
+                // Player 1 (bottom): flip face-up so camera sees faces
+                baseRotation = simd_quatf(angle: .pi, axis: [1, 0, 0])
+            case 2, 3, 4:
+                // Players 2, 3, 4: keep face-down so camera sees backs
+                baseRotation = simd_quatf(angle: 0, axis: [1, 0, 0])
+            default:
+                baseRotation = simd_quatf(angle: 0, axis: [1, 0, 0])
+            }
+
             let tiltQuat = simd_quatf(angle: sideSettings.tiltAngle, axis: [1, 0, 0])    // Tilt cards back
             let fanQuat = simd_quatf(angle: arcAngle, axis: [0, 1, 0]) // Fan spread
             let offsetQuat = simd_quatf(angle: sideSettings.rotationOffset, axis: [0, 1, 0]) // Rotation offset for flipping
@@ -135,7 +147,7 @@ internal func dealCardsInHands() async {
                     fanCenter.y + Float(cardIndex) * verticalOffset,
                     fanCenter.z - cos(arcAngle) * arcRadius + arcRadius
                 )
-                cardRotation = offsetQuat * fanQuat * tiltQuat * faceUpQuat
+                cardRotation = offsetQuat * fanQuat * tiltQuat * baseRotation
 
             case 2: // Left - fan opens toward table center
                 cardPosition = SIMD3(
@@ -144,7 +156,7 @@ internal func dealCardsInHands() async {
                     fanCenter.z + sin(arcAngle) * arcRadius
                 )
                 let sideQuat2 = simd_quatf(angle: .pi / 2, axis: [0, 1, 0])
-                cardRotation = sideQuat2 * offsetQuat * fanQuat * tiltQuat * faceUpQuat
+                cardRotation = sideQuat2 * offsetQuat * fanQuat * tiltQuat * baseRotation
 
             case 3: // Top - fan opens toward table center
                 cardPosition = SIMD3(
@@ -153,7 +165,7 @@ internal func dealCardsInHands() async {
                     fanCenter.z + cos(arcAngle) * arcRadius - arcRadius
                 )
                 let sideQuat3 = simd_quatf(angle: .pi, axis: [0, 1, 0])
-                cardRotation = sideQuat3 * offsetQuat * fanQuat * tiltQuat * faceUpQuat
+                cardRotation = sideQuat3 * offsetQuat * fanQuat * tiltQuat * baseRotation
 
             case 4: // Right - fan opens toward table center
                 cardPosition = SIMD3(
@@ -162,11 +174,11 @@ internal func dealCardsInHands() async {
                     fanCenter.z - sin(arcAngle) * arcRadius
                 )
                 let sideQuat4 = simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])
-                cardRotation = sideQuat4 * offsetQuat * fanQuat * tiltQuat * faceUpQuat
+                cardRotation = sideQuat4 * offsetQuat * fanQuat * tiltQuat * baseRotation
 
             default:
                 cardPosition = fanCenter
-                cardRotation = offsetQuat * faceUpQuat
+                cardRotation = offsetQuat * baseRotation
             }
 
             // Animate card to position (kinematic mode for smooth animation)
@@ -193,8 +205,8 @@ internal func dealCardsInHands() async {
 internal func dealSingleCard(_ card: Entity, toSide sideIndex: Int, delay: Double, randomSpread: Float = 0.015) async {
     try? await Task.sleep(for: .seconds(delay))
 
-    // Flip the card face-up
-    card.orientation = simd_quatf(angle: .pi, axis: [1, 0, 0])
+    // Keep cards face-down (identity rotation) so camera sees backs
+    card.orientation = simd_quatf(angle: 0, axis: [1, 0, 0])
 
     // Switch to dynamic mode so cards can interact with physics
     if var physicsBody = card.components[PhysicsBodyComponent.self] {
@@ -306,12 +318,12 @@ internal func stackCardsBySide() async {
         4: [0.55, 0.008, 0]
     ]
 
-    // Y-axis rotation so cards face their player
+    // Y-axis rotation so cards face their player (face-down, backs visible)
     let sideRotations: [Int: simd_quatf] = [
-        1: simd_quatf(angle: .pi, axis: [1, 0, 0]),                                                          // face-up, facing bottom
-        2: simd_quatf(angle: .pi, axis: [1, 0, 0]) * simd_quatf(angle: .pi / 2, axis: [0, 1, 0]),           // face-up, rotated to face left
-        3: simd_quatf(angle: .pi, axis: [1, 0, 0]) * simd_quatf(angle: .pi, axis: [0, 1, 0]),               // face-up, facing top
-        4: simd_quatf(angle: .pi, axis: [1, 0, 0]) * simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])          // face-up, rotated to face right
+        1: simd_quatf(angle: 0, axis: [1, 0, 0]),                                                           // face-down, backs up
+        2: simd_quatf(angle: .pi / 2, axis: [0, 1, 0]),                                                     // face-down, rotated to face left
+        3: simd_quatf(angle: .pi, axis: [0, 1, 0]),                                                         // face-down, rotated to face top
+        4: simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])                                                     // face-down, rotated to face right
     ]
 
     for (side, cardsInSide) in sideCards {

@@ -93,10 +93,10 @@ internal func applyWearTexture(to entity: Entity) {
         wearLevel: wear.currentWearLevel,
         intensity: intensity
     ) {
-        // Update face material (index 0)
+        // Update face material (index 1 — face is on the -Y surface)
         if var materials = modelEntity.model?.materials as? [PhysicallyBasedMaterial],
-           !materials.isEmpty {
-            materials[0].baseColor = .init(texture: .init(wornTexture))
+           materials.count > 1 {
+            materials[1].baseColor = .init(texture: .init(wornTexture))
             modelEntity.model?.materials = materials
         }
     }

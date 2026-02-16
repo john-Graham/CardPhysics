@@ -15,8 +15,8 @@ enum CurvedCardMesh {
 
     // MARK: - Mesh Generation
 
-    /// Generates a two-part mesh: descriptor 0 = front face (material index 0),
-    /// descriptor 1 = back face + edges (material index 1).
+    /// Generates a two-part mesh: descriptor 0 = +Y face (material index 0 = card back),
+    /// descriptor 1 = -Y face + edges (material index 1 = card face).
     private static func generateMesh(curvature: Float) -> MeshResource {
         let width = CardEntity3D.cardWidth
         let height = CardEntity3D.cardHeight
@@ -46,7 +46,8 @@ enum CurvedCardMesh {
         }
 
         // =====================================================================
-        // DESCRIPTOR 0: Front face only (material index 0 = card face texture)
+        // DESCRIPTOR 0: +Y face (material index 0 = card back texture)
+        // Visible from above when card has identity rotation (face-down)
         // =====================================================================
         var frontPositions: [SIMD3<Float>] = []
         var frontNormals: [SIMD3<Float>] = []
@@ -84,9 +85,11 @@ enum CurvedCardMesh {
         frontDescriptor.normals = MeshBuffers.Normals(frontNormals)
         frontDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(frontUVs)
         frontDescriptor.primitives = .triangles(frontIndices)
+        frontDescriptor.materials = .allFaces(0)
 
         // =====================================================================
-        // DESCRIPTOR 1: Back face + edges (material index 1 = card back texture)
+        // DESCRIPTOR 1: -Y face + edges (material index 1 = card face texture)
+        // Visible from above when card is flipped face-up (pi rotation on X)
         // =====================================================================
         var backPositions: [SIMD3<Float>] = []
         var backNormals: [SIMD3<Float>] = []
@@ -158,8 +161,9 @@ enum CurvedCardMesh {
         backDescriptor.normals = MeshBuffers.Normals(backNormals)
         backDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(backUVs)
         backDescriptor.primitives = .triangles(backIndices)
+        backDescriptor.materials = .allFaces(1)
 
-        // Generate mesh with two descriptors — RealityKit maps descriptor order to material indices
+        // Generate mesh with two descriptors — material indices set explicitly per descriptor
         do {
             return try MeshResource.generate(from: [frontDescriptor, backDescriptor])
         } catch {
