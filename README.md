@@ -6,61 +6,156 @@ A standalone iOS sandbox for developing and fine-tuning realistic card animation
 
 CardPhysics provides a 3D RealityKit scene with procedurally generated table and felt, HDRI lighting, and a floating control panel for triggering and tweaking card animations in real time. All animation code is isolated from game logic, making it easy to extract and reuse in production card-game apps.
 
+Built with iOS 26's latest features including Liquid Glass design language (`.glassEffect()`) and landscape-only orientation, this sandbox demonstrates advanced RealityKit physics techniques including continuous collision detection (CCD), tribological modeling, and impulse-based throwing mechanics.
+
+## Quick Start
+
+```swift
+import SwiftUI
+import CardPhysicsKit
+
+struct ContentView: View {
+    var body: some View {
+        CardPhysicsView()  // Full-featured card physics sandbox
+    }
+}
+```
+
+The `CardPhysicsView` includes the complete 3D scene with floating controls, settings panels, and animation triggers.
+
 ## Project Structure
 
 ```
 CardPhysics/
-├── CardPhysicsPackage/              # Swift Package — all core logic
-│   ├── Package.swift
-│   └── Sources/CardPhysicsKit/
-│       ├── Card.swift               # Card model
-│       ├── CardView.swift           # 2D SwiftUI card view
-│       ├── CardEntity3D.swift       # 3D RealityKit card entity
-│       ├── CardTextureGenerator.swift
-│       ├── CurvedCardMesh.swift     # Curved card geometry
-│       ├── ProceduralTextureGenerator.swift  # Table/felt textures
-│       ├── PhysicsSettings.swift    # Animation parameters & presets
-│       ├── CardPhysicsScene.swift   # Main 3D scene
-│       ├── CardPhysicsView.swift    # SwiftUI view with controls
-│       └── Resources/room_bg.exr   # HDRI environment map
-├── CardPhysicsApp/                  # Xcode project wrapper
-│   └── CardPhysicsApp.xcodeproj
-├── Package.swift                    # Root package (imports CardPhysicsKit)
-└── Sources/CardPhysicsApp/
-    └── CardPhysicsApp.swift         # @main entry point
+├── CardPhysicsPackage/              # Swift Package with all core logic (CardPhysicsKit library)
+│   ├── Package.swift                # swift-tools-version: 6.2, iOS 26+
+│   └── Sources/CardPhysicsKit/      # 41 files organized in modular folders
+│       ├── Core/Models/             # Card, Suit, Rank, CardWearComponent
+│       ├── Configuration/           # PhysicsSettings, SceneCoordinator, themes
+│       ├── Scene/                   # CardPhysicsScene + Setup/Environment extensions
+│       ├── Entities/                # CardEntity3D, HandEntity3D (factory pattern)
+│       ├── Geometry/                # CurvedCardMesh (procedural mesh generation)
+│       ├── Rendering/               # Texture generators, CardView
+│       ├── Animations/              # Scene extensions: Wear, Dealing, PickUp, InHands
+│       ├── Effects/                 # ParticleEffects, SkyboxEntity
+│       ├── UI/                      # CardPhysicsView + Components + Panels (11 panels)
+│       ├── Storage/                 # Image persistence for custom cards/rooms
+│       └── Resources/               # HDRI environment, room backgrounds
+├── CardPhysicsApp/                  # Xcode project wrapper (thin shell)
+│   ├── CardPhysicsApp.xcodeproj
+│   ├── CardPhysicsApp/              # Main app target (entry point + ContentView)
+│   ├── CardPhysicsAppTests/         # Unit tests
+│   ├── CardPhysicsAppUITests/       # UI automation tests
+│   └── card-physics.rtf             # Reference doc on RealityKit card physics theory
+├── CardPhysics/                     # Alternate @main entry using SwiftUI App protocol
+├── Sources/CardPhysicsApp/          # SPM executable target (placeholder)
+├── Config/                          # Reserved for configuration files
+└── Package.swift                    # Root SPM manifest (swift-tools-version: 6.2)
 ```
 
 ## Getting Started
 
-1. Open `CardPhysicsApp/CardPhysicsApp.xcodeproj` in Xcode.
-2. Build and run on an iOS 18+ simulator or device.
-3. Use the floating buttons to trigger animations.
-4. Open the Settings panel to adjust physics parameters.
+### Build and Run
+
+1. Open `CardPhysicsApp/CardPhysicsApp.xcodeproj` in Xcode 16.3+
+2. Select an iOS 26+ simulator or device
+3. Build and run the CardPhysicsApp scheme
+4. Use the floating buttons to trigger animations
+5. Open the Settings panel to adjust physics parameters in real time
+
+### Installing on Physical Device
+
+For testing on John's iPhone (iOS 26.3):
+
+```bash
+# Build and deploy
+xcrun devicectl device install app --device 00008150-0010281E2261401C \
+  ~/Library/Developer/Xcode/DerivedData/CardPhysicsApp-*/Build/Products/Debug-iphoneos/CardPhysicsApp.app
+
+# Launch
+xcrun devicectl device process launch --device 00008150-0010281E2261401C johndgraham.CardPhysicsApp
+```
 
 ## Features
 
-### Animations
+### Core Animations
 
-| Action | Description |
-|--------|-------------|
-| Deal Cards | Cards arc from a deck to player positions |
-| Play Card | A card moves to the center of the table |
-| Pick Up Card | A card lifts from the table into the hand |
-| Slide Cards | All cards slide to the side |
-| Reset | Return the scene to its initial state |
+| Action | Description | Status |
+|--------|-------------|--------|
+| **Deal Cards** | Multiple deal modes: 4, 12, 20 cards, Euchre, In-Hands | ✅ Active |
+| **Pick Up Cards** | Gather and lift cards from table to hand positions | ✅ Active |
+| **In-Hands Fanning** | Spread cards in arc formations with tap-to-flip | ✅ Active |
+| **Reset** | Return scene to initial state | ✅ Active |
+
+### Visual Customization
+
+- **Card Design**: Custom face/back images, wear effects, curvature
+- **Table Themes**: Procedural felt and wood materials with color customization
+- **Room Backgrounds**: 360° panoramic environments (3 included, custom upload supported)
+- **Lighting**: HDRI-based realistic lighting with fallback 3-point setup
+- **Effects**: Particle systems for dust and felt disturbance
 
 ### Physics Settings
 
-Real-time sliders for duration, arc height, rotation, and card curvature.
+Real-time sliders for:
+- Deal animation: duration, arc height, rotation, velocity, spin
+- Pick up animation: gather speed, lift height, timing
+- In-hands positioning: fan spread, height, rotation per player
+- Card properties: curvature, wear progression, friction
 
 ### Presets
 
-- **Realistic** — balanced, natural-looking defaults
-- **Slow Motion** — exaggerated for detailed observation
-- **Fast** — snappy for fast-paced gameplay
+- **Realistic** — Balanced, natural-looking defaults
+- **Slow Motion** — Exaggerated for detailed observation
+- **Fast** — Snappy for fast-paced gameplay
+
+## Architecture Highlights
+
+### Modular Organization
+41 files organized across 10 feature-based folders in CardPhysicsKit, replacing the original flat structure. Major components split using Swift extensions:
+- **CardPhysicsScene**: 1,466 → 217 lines (85% reduction via 6 extension files)
+- **CardPhysicsView**: 1,797 → 328 lines (82% reduction via component extraction)
+
+### Design Patterns
+- **Factory Pattern**: `CardEntity3D.makeCard()` centralizes entity creation
+- **Coordinator Pattern**: `SceneCoordinator` decouples SwiftUI from RealityKit
+- **Singleton + Cache**: `CardTextureGenerator.shared` generates textures once
+- **Observable State**: `@Observable` classes for automatic SwiftUI reactivity
+
+### iOS 26 Features
+- **Liquid Glass** design language for all floating panels and buttons
+- **GestureComponent** for entity-level tap gestures (feature-flagged)
+- **Landscape-only orientation** locked at app launch
 
 ## Requirements
 
-- iOS 18.0+
-- Xcode 16.3+
-- Swift 6.1+
+- **iOS 26.0+** (currently 26.2)
+- **Xcode 16.3+**
+- **Swift 6.1+** with StrictConcurrency and ExistentialAny enabled
+
+## Documentation
+
+- **CLAUDE.md** — Comprehensive project guide (conventions, architecture, open issues)
+- **CardPhysicsPackage/CLAUDE.md** — Framework architecture and patterns
+- **CardPhysicsKit/CLAUDE.md** — Detailed file-by-file reference
+- **card-physics.rtf** — Deep technical reference on RealityKit card physics theory
+- **Resources/Rooms/** — Asset specifications and sourcing guides for room backgrounds
+
+## Physics Deep Dive
+
+The `card-physics.rtf` reference document covers:
+- Physics body modes (static/kinematic/dynamic) and state transitions
+- Continuous Collision Detection (CCD) for thin objects
+- Tribological modeling: friction and restitution coefficients
+- Linear and angular impulse calculations for realistic throwing
+- Solver iteration tuning for stack stability
+- Performance optimization for 52-card scenes
+
+## Roadmap
+
+See [GitHub Issues](https://github.com/yourusername/CardPhysics/issues) for planned enhancements:
+- #1 Deal button: long-press menu with multiple deal modes
+- #2 Remove Play Card button
+- #3 Pick Up button: long-press menu to gather cards by corner
+- #4 Remove Slide button
+- #5 Settings panel: reorganize sliders grouped by animation type
