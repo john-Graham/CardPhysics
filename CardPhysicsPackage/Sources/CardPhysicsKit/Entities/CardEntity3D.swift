@@ -5,10 +5,10 @@ import SwiftUI
 enum CardEntity3D {
     // Enlarged playing card proportions in meters (2x standard ~126mm x 176mm)
     static let cardWidth: Float = 0.126
-    // Reduced thickness to 0.4mm (approx real card stock)
-    static let cardHeight: Float = 0.0004
+    // Visible edge thickness: 2mm (exaggerated from realistic 0.4mm for better visibility)
+    static let cardHeight: Float = 0.002
     static let cardDepth: Float = 0.176
-    // Tighter corners for more realistic cut
+    // Corner radius for rounded 3D corners (will be used in mesh generation)
     static let cornerRadius: Float = 0.002
 
     static func makeCard(
@@ -59,9 +59,11 @@ enum CardEntity3D {
         entity.name = "card_\(card.suit.name)_\(card.rank.name)"
 
         // Always add collision component for cards
+        // Collision height accounts for card thickness plus curvature displacement
+        let collisionHeight = cardHeight + (abs(curvature) * 2.0)
         let shape = ShapeResource.generateBox(
             width: cardWidth,
-            height: cardHeight,
+            height: collisionHeight,
             depth: cardDepth
         )
         entity.components.set(CollisionComponent(shapes: [shape]))

@@ -1,6 +1,53 @@
+import Foundation
 import RealityKit
 
 extension CardPhysicsScene {
+
+// MARK: - Safe Movement Wrapper
+
+/// Safely move a card to a target transform, validating against table collision
+private func moveCardSafely(
+    _ card: Entity,
+    to transform: Transform,
+    duration: TimeInterval = 0.3,
+    timingFunction: AnimationTimingFunction = .easeInOut
+) {
+    let curvature: Float = 0.0  // Cards in hands are flat
+
+    let safeTransform = CollisionUtils.validateCardTransform(
+        transform,
+        cardWidth: CardEntity3D.cardWidth,
+        cardHeight: CardEntity3D.cardHeight,
+        cardDepth: CardEntity3D.cardDepth,
+        curvature: curvature,
+        scene: nil
+    )
+
+    card.move(to: safeTransform, relativeTo: nil, duration: duration, timingFunction: timingFunction)
+}
+
+/// Validate a position against table collision
+private func validateCardPosition(
+    _ position: SIMD3<Float>,
+    rotation: simd_quatf
+) -> SIMD3<Float> {
+    let curvature: Float = 0.0
+    let transform = Transform(rotation: rotation, translation: position)
+
+    let safeTransform = CollisionUtils.validateCardTransform(
+        transform,
+        cardWidth: CardEntity3D.cardWidth,
+        cardHeight: CardEntity3D.cardHeight,
+        cardDepth: CardEntity3D.cardDepth,
+        curvature: curvature,
+        scene: nil
+    )
+
+    return safeTransform.translation
+}
+
+// MARK: - Fan Cards
+
 public func fanCardsInHands() async {
     guard !cards.isEmpty else { return }
 
@@ -86,14 +133,14 @@ public func fanCardsInHands() async {
             let stackOffset = stackDirection * (Float(index) * cardThickness)
             let stackPosition = stackCenter + stackOffset
 
-            // Animate card to stacked vertical position
-            card.move(
+            // Animate card to stacked vertical position (with collision validation)
+            moveCardSafely(
+                card,
                 to: Transform(
                     scale: card.scale,
                     rotation: stackedRotation,
                     translation: stackPosition
                 ),
-                relativeTo: nil,
                 duration: 0.6,
                 timingFunction: .easeInOut
             )
@@ -137,13 +184,13 @@ internal func flipCard(_ card: Entity) {
         card.components[PhysicsMotionComponent.self] = nil
     }
 
-    card.move(
+    moveCardSafely(
+        card,
         to: Transform(
             scale: card.scale,
             rotation: targetOrientation,
             translation: card.position
         ),
-        relativeTo: nil,
         duration: 0.25,
         timingFunction: .easeInOut
     )
@@ -287,7 +334,9 @@ internal func updateInHandsCardPositions() {
             }
 
             // Update card transform instantly (no animation for real-time feedback)
-            card.position = cardPosition
+            // Validate position to prevent table penetration
+            let safePosition = validateCardPosition(cardPosition, rotation: cardRotation)
+            card.position = safePosition
             card.orientation = cardRotation
         }
     }

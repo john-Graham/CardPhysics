@@ -1,6 +1,33 @@
+import Foundation
 import RealityKit
 
 extension CardPhysicsScene {
+
+// MARK: - Safe Movement Wrapper
+
+/// Safely move a card to a target transform, validating against table collision
+private func moveCardSafely(
+    _ card: Entity,
+    to transform: Transform,
+    duration: TimeInterval = 0.3,
+    timingFunction: AnimationTimingFunction = .easeInOut
+) {
+    let curvature: Float = 0.0  // Cards in pickup are flat
+
+    let safeTransform = CollisionUtils.validateCardTransform(
+        transform,
+        cardWidth: CardEntity3D.cardWidth,
+        cardHeight: CardEntity3D.cardHeight,
+        cardDepth: CardEntity3D.cardDepth,
+        curvature: curvature,
+        scene: nil
+    )
+
+    card.move(to: safeTransform, relativeTo: nil, duration: duration, timingFunction: timingFunction)
+}
+
+// MARK: - Gather and Pick Up
+
 public func gatherAndPickUp(corner: GatherCorner) async {
     guard !cards.isEmpty else { return }
 
@@ -36,13 +63,13 @@ public func gatherAndPickUp(corner: GatherCorner) async {
         let stackY = cornerPosition.y + Float(index) * 0.001
         let target = SIMD3<Float>(cornerPosition.x, stackY, cornerPosition.z)
 
-        card.move(
+        moveCardSafely(
+            card,
             to: Transform(
                 scale: card.scale,
                 rotation: simd_quatf(angle: .pi, axis: [1, 0, 0]),
                 translation: target
             ),
-            relativeTo: nil,
             duration: 0.4,
             timingFunction: .easeInOut
         )
@@ -59,13 +86,13 @@ public func gatherAndPickUp(corner: GatherCorner) async {
         let stackY = cornerPosition.y + Float(index) * 0.001 + 0.15
         let liftTarget = SIMD3<Float>(cornerPosition.x, stackY, cornerPosition.z)
 
-        card.move(
+        moveCardSafely(
+            card,
             to: Transform(
                 scale: card.scale,
                 rotation: simd_quatf(angle: .pi, axis: [1, 0, 0]),
                 translation: liftTarget
             ),
-            relativeTo: nil,
             duration: 0.3,
             timingFunction: .easeIn
         )

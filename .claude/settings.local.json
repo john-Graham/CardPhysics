@@ -24,7 +24,21 @@
       "Bash(xcrun simctl boot:*)",
       "Bash(xcrun devicectl list devices:*)",
       "Bash(head:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(gh issue close:*)",
+      "WebFetch(domain:maxxfrazer.medium.com)",
+      "Bash(echo:*)",
+      "Bash(xcrun devicectl device screenshot:*)",
+      "Bash(xcrun devicectl device info diagnostics screenshot:*)",
+      "Bash(xcrun devicectl device info diagnostics:*)",
+      "Bash(xcrun simctl io:*)",
+      "Bash(xcrun devicectl device unpair:*)",
+      "Bash(xcrun devicectl unpair:*)",
+      "Bash(xcrun devicectl:*)",
+      "Bash(log stream:*)",
+      "Bash(log show:*)",
+      "mcp__MCP_DOCKER__mcp-find"
     ]
   }
 }

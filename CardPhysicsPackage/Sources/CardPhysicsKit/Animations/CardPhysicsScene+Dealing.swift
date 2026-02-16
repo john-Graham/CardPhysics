@@ -1,6 +1,36 @@
+import Foundation
 import RealityKit
 
 extension CardPhysicsScene {
+
+// MARK: - Safe Movement Wrapper
+
+/// Safely move a card to a target transform, validating against table collision
+private func moveCardSafely(
+    _ card: Entity,
+    to transform: Transform,
+    duration: TimeInterval = 0.3,
+    timingFunction: AnimationTimingFunction = .easeInOut
+) {
+    // Get current curvature for this card (default to 0 if not tracked)
+    let curvature: Float = 0.0  // Cards in dealing are flat
+
+    // Validate transform doesn't penetrate table/rails
+    let safeTransform = CollisionUtils.validateCardTransform(
+        transform,
+        cardWidth: CardEntity3D.cardWidth,
+        cardHeight: CardEntity3D.cardHeight,
+        cardDepth: CardEntity3D.cardDepth,
+        curvature: curvature,
+        scene: nil
+    )
+
+    // Use validated transform
+    card.move(to: safeTransform, relativeTo: nil, duration: duration, timingFunction: timingFunction)
+}
+
+// MARK: - Deal Modes
+
 public func dealCards(mode: DealMode) async {
     // Remove existing cards and hands
     for card in cards { card.removeFromParent() }
@@ -191,10 +221,10 @@ internal func dealCardsInHands() async {
             let delay = Double(cardIndex) * 0.05
             try? await Task.sleep(for: .seconds(delay))
 
-            // Animate to final position using settings duration
-            card.move(
+            // Animate to final position using settings duration (with collision validation)
+            moveCardSafely(
+                card,
                 to: Transform(scale: [1, 1, 1], rotation: cardRotation, translation: cardPosition),
-                relativeTo: nil,
                 duration: settings.inHandsAnimationDuration,
                 timingFunction: .easeInOut
             )
@@ -341,13 +371,13 @@ internal func stackCardsBySide() async {
             let stackY = basePos.y + Float(index) * 0.001
             let target = SIMD3<Float>(basePos.x, stackY, basePos.z)
 
-            card.move(
+            moveCardSafely(
+                card,
                 to: Transform(
                     scale: card.scale,
                     rotation: rotation,
                     translation: target
                 ),
-                relativeTo: nil,
                 duration: 0.4,
                 timingFunction: .easeInOut
             )
