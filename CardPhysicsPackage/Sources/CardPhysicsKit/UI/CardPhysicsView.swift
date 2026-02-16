@@ -35,6 +35,9 @@ public struct CardPhysicsView: View {
             )
             .id(sceneKey)
             .ignoresSafeArea()
+            .onAppear {
+                printCurrentSettings()
+            }
 
             // Floating control buttons on the left side
             HStack {
@@ -324,5 +327,19 @@ public struct CardPhysicsView: View {
         showCardEffects = false
         showEnvironmentalEffects = false
         showCameraSettings = false
+    }
+
+    private func printCurrentSettings() {
+        print("=== CURRENT IN-HANDS SETTINGS ===")
+        for side in 1...4 {
+            let sideSettings = settings.inHandsSettings(for: side)
+            print("Side \(side):")
+            print("  Fan Angle: \(sideSettings.fanAngle) radians (\(sideSettings.fanAngle * 180 / .pi) degrees)")
+            print("  Tilt Angle: \(sideSettings.tiltAngle) radians (\(sideSettings.tiltAngle * 180 / .pi) degrees)")
+            print("  Arc Radius: \(sideSettings.arcRadius) meters")
+            print("  Vertical Spacing: \(sideSettings.verticalSpacing) meters")
+            print("  Rotation Offset: \(sideSettings.rotationOffset) radians (\(sideSettings.rotationOffset * 180 / .pi) degrees)")
+        }
+        print("=================================")
     }
 }
