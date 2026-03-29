@@ -69,7 +69,7 @@ public struct CardPhysicsScene: View {
     public let cameraTarget: SIMD3<Float>
     let coordinator: SceneCoordinator?
 
-    public init(settings: PhysicsSettings, cameraPosition: SIMD3<Float> = [0, 0.55, 0.41], cameraTarget: SIMD3<Float> = [0, 0, 0], coordinator: SceneCoordinator? = nil) {
+    public init(settings: PhysicsSettings, cameraPosition: SIMD3<Float> = [0, 0.55, 0.54], cameraTarget: SIMD3<Float> = [0, 0, 0], coordinator: SceneCoordinator? = nil) {
         self.settings = settings
         self.cameraPosition = cameraPosition
         self.cameraTarget = cameraTarget

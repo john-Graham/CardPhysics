@@ -32,9 +32,9 @@ public struct CardView: View {
 
         var width: CGFloat {
             switch self {
-            case .small: return 50
-            case .medium: return 70
-            case .large: return 90
+            case .small: 50
+            case .medium: 70
+            case .large: 90
             }
         }
 
@@ -44,17 +44,17 @@ public struct CardView: View {
 
         var fontSize: CGFloat {
             switch self {
-            case .small: return 14
-            case .medium: return 20
-            case .large: return 28
+            case .small: 14
+            case .medium: 20
+            case .large: 28
             }
         }
 
         var cornerRadius: CGFloat {
             switch self {
-            case .small: return 6
-            case .medium: return 8
-            case .large: return 10
+            case .small: 6
+            case .medium: 8
+            case .large: 10
             }
         }
     }
@@ -119,8 +119,8 @@ public struct CardView: View {
     /// Suit color used across face styles
     var suitColor: Color {
         switch card.suit.color {
-        case .red: return Color(red: 0.85, green: 0.05, blue: 0.05)
-        case .black: return Color(red: 0.10, green: 0.10, blue: 0.10)
+        case .red: Color(red: 0.85, green: 0.05, blue: 0.05)
+        case .black: Color(red: 0.10, green: 0.10, blue: 0.10)
         }
     }
 

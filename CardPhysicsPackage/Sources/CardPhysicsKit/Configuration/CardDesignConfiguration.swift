@@ -13,27 +13,27 @@ public enum CardFaceStyle: String, CaseIterable, Codable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .classic: return "Classic"
-        case .modern: return "Modern"
-        case .minimal: return "Minimal"
-        case .bold: return "Bold"
-        case .bicycle: return "Bicycle"
-        case .french: return "French"
-        case .customImage: return "Photo"
-        case .selfie: return "Selfie"
+        case .classic: "Classic"
+        case .modern: "Modern"
+        case .minimal: "Minimal"
+        case .bold: "Bold"
+        case .bicycle: "Bicycle"
+        case .french: "French"
+        case .customImage: "Photo"
+        case .selfie: "Selfie"
         }
     }
 
     public var icon: String {
         switch self {
-        case .classic: return "rectangle.portrait"
-        case .modern: return "rectangle.portrait.fill"
-        case .minimal: return "square"
-        case .bold: return "rectangle.portrait.inset.filled"
-        case .bicycle: return "suit.club.fill"
-        case .french: return "suit.spade.fill"
-        case .customImage: return "photo"
-        case .selfie: return "camera"
+        case .classic: "rectangle.portrait"
+        case .modern: "rectangle.portrait.fill"
+        case .minimal: "square"
+        case .bold: "rectangle.portrait.inset.filled"
+        case .bicycle: "suit.club.fill"
+        case .french: "suit.spade.fill"
+        case .customImage: "photo"
+        case .selfie: "camera"
         }
     }
 
@@ -56,58 +56,58 @@ public enum CardBackStyle: String, CaseIterable, Codable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .classicMaroon: return "Maroon"
-        case .royalBlue: return "Royal Blue"
-        case .forestGreen: return "Forest Green"
-        case .midnight: return "Midnight"
-        case .bicycleRed: return "Bicycle Red"
-        case .bicycleBlue: return "Bicycle Blue"
-        case .french: return "French"
-        case .customImage: return "Photo"
-        case .selfie: return "Selfie"
+        case .classicMaroon: "Maroon"
+        case .royalBlue: "Royal Blue"
+        case .forestGreen: "Forest Green"
+        case .midnight: "Midnight"
+        case .bicycleRed: "Bicycle Red"
+        case .bicycleBlue: "Bicycle Blue"
+        case .french: "French"
+        case .customImage: "Photo"
+        case .selfie: "Selfie"
         }
     }
 
     public var gradientColors: (primary: Color, secondary: Color) {
         switch self {
         case .classicMaroon:
-            return (
+            (
                 Color(red: 0.55, green: 0.08, blue: 0.10),
                 Color(red: 0.40, green: 0.05, blue: 0.08)
             )
         case .royalBlue:
-            return (
+            (
                 Color(red: 0.10, green: 0.15, blue: 0.55),
                 Color(red: 0.06, green: 0.08, blue: 0.40)
             )
         case .forestGreen:
-            return (
+            (
                 Color(red: 0.08, green: 0.40, blue: 0.15),
                 Color(red: 0.05, green: 0.28, blue: 0.10)
             )
         case .midnight:
-            return (
+            (
                 Color(red: 0.10, green: 0.10, blue: 0.20),
                 Color(red: 0.05, green: 0.05, blue: 0.12)
             )
         case .bicycleRed:
-            return (
+            (
                 Color(red: 0.80, green: 0.12, blue: 0.15),
                 Color(red: 0.65, green: 0.08, blue: 0.10)
             )
         case .bicycleBlue:
-            return (
+            (
                 Color(red: 0.12, green: 0.25, blue: 0.70),
                 Color(red: 0.08, green: 0.15, blue: 0.55)
             )
         case .french:
-            return (
+            (
                 Color(red: 0.15, green: 0.30, blue: 0.60),
                 Color(red: 0.10, green: 0.20, blue: 0.45)
             )
         case .customImage, .selfie:
             // Fallback gradient for custom/selfie (not used when image is loaded)
-            return (
+            (
                 Color(red: 0.55, green: 0.08, blue: 0.10),
                 Color(red: 0.40, green: 0.05, blue: 0.08)
             )
@@ -126,7 +126,7 @@ public enum CardBackStyle: String, CaseIterable, Codable, Sendable {
 
 @Observable
 @MainActor
-public final class CardDesignConfiguration: Sendable {
+public final class CardDesignConfiguration {
     public var faceStyle: CardFaceStyle = .classic
     public var backStyle: CardBackStyle = .classicMaroon
 
@@ -177,18 +177,18 @@ public final class CardDesignConfiguration: Sendable {
     /// The filename to use for the current face style's custom image, if any
     public var activeFaceImageFilename: String? {
         switch faceStyle {
-        case .customImage: return customFaceImageFilename
-        case .selfie: return selfieFaceImageFilename
-        default: return nil
+        case .customImage: customFaceImageFilename
+        case .selfie: selfieFaceImageFilename
+        default: nil
         }
     }
 
     /// The filename to use for the current back style's custom image, if any
     public var activeBackImageFilename: String? {
         switch backStyle {
-        case .customImage: return customBackImageFilename
-        case .selfie: return selfieBackImageFilename
-        default: return nil
+        case .customImage: customBackImageFilename
+        case .selfie: selfieBackImageFilename
+        default: nil
         }
     }
 }

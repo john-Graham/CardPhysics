@@ -9,11 +9,11 @@ public enum DealMode: String, CaseIterable, Sendable {
 
     var cardCount: Int {
         switch self {
-        case .four: return 4
-        case .twelve: return 12
-        case .twenty: return 20
-        case .euchre: return 20
-        case .inHands: return 20
+        case .four: 4
+        case .twelve: 12
+        case .twenty: 20
+        case .euchre: 20
+        case .inHands: 20
         }
     }
 }

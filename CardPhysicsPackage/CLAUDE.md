@@ -26,10 +26,10 @@ CardPhysicsPackage/
 ```
 
 ## Package Configuration (Package.swift)
-- **Swift Tools Version**: 6.2
-- **Minimum Platform**: iOS 26.0
+- **Swift Tools Version**: 6.3
+- **Minimum Platform**: iOS 26.4
 - **Product**: `CardPhysicsKit` (library)
-- **Swift Settings**: `ExistentialAny` (upcoming), `StrictConcurrency` (experimental)
+- **Swift Settings**: Swift 6 language mode (strict concurrency and existential any enforced by default)
 - **Resources**: `Sources/CardPhysicsKit/Resources/` processed at build time
 
 ## System Framework Dependencies

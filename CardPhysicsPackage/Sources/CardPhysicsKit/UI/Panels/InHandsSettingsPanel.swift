@@ -109,6 +109,19 @@ struct InHandsSettingsPanel: View {
                         unit: "°"
                     )
 
+                    SliderSetting(
+                        label: "Curvature",
+                        value: Binding(
+                            get: { Double(settings.inHandsSettings(for: selectedSide).curvature) },
+                            set: {
+                                settings.inHandsSettings(for: selectedSide).curvature = Float($0)
+                                coordinator?.updateInHandsPositionsAction?()
+                            }
+                        ),
+                        range: -0.05...0.05,
+                        unit: "m"
+                    )
+
                     Divider()
 
                     SliderSetting(
