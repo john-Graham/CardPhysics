@@ -28,7 +28,7 @@ The `CardPhysicsView` includes the complete 3D scene with floating controls, set
 ```
 CardPhysics/
 ├── CardPhysicsPackage/              # Swift Package with all core logic (CardPhysicsKit library)
-│   ├── Package.swift                # swift-tools-version: 6.2, iOS 26+
+│   ├── Package.swift                # swift-tools-version: 6.3, iOS 26.4+
 │   └── Sources/CardPhysicsKit/      # 49 files organized in modular folders
 │       ├── Core/Models/             # Card, Suit, Rank, CardWearComponent
 │       ├── Configuration/           # PhysicsSettings, SceneCoordinator, themes
@@ -55,7 +55,7 @@ CardPhysics/
 ### Build and Run
 
 1. Open `CardPhysicsApp/CardPhysicsApp.xcodeproj` in Xcode 16.3+
-2. Select an iOS 26+ simulator or device
+2. Select an iOS 26.4+ simulator or device
 3. Build and run the CardPhysicsApp scheme
 4. Use the floating buttons to trigger animations
 5. Open the Settings panel to adjust physics parameters in real time
@@ -129,9 +129,9 @@ Real-time sliders for:
 
 ## Requirements
 
-- **iOS 26.0+** (currently 26.2)
+- **iOS 26.4+** (currently 26.4)
 - **Xcode 16.3+**
-- **Swift 6.1+** with StrictConcurrency and ExistentialAny enabled
+- **Swift 6.3** with strict concurrency enabled by default in Swift 6 language mode
 
 ## Documentation
 

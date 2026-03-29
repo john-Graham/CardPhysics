@@ -25,17 +25,17 @@ public enum RoomEnvironment: String, Codable, Sendable, CaseIterable {
     public var panoramaFilename: String? {
         switch self {
         case .none:
-            return nil
+            nil
         case .pokerRoom:
-            return "poker_room.jpg"
+            "poker_room.jpg"
         case .modernOffice:
-            return "modern_office.jpg"
+            "modern_office.jpg"
         case .classicLibrary:
-            return "classic_library.jpg"
+            "classic_library.jpg"
         case .woodCabin:
-            return "wood_cabin.jpg"
+            "wood_cabin.jpg"
         case .customImage:
-            return nil
+            nil
         }
     }
 
@@ -43,17 +43,17 @@ public enum RoomEnvironment: String, Codable, Sendable, CaseIterable {
     public var displayName: String {
         switch self {
         case .none:
-            return "None"
+            "None"
         case .pokerRoom:
-            return "Poker Room"
+            "Poker Room"
         case .modernOffice:
-            return "Modern Office"
+            "Modern Office"
         case .classicLibrary:
-            return "Classic Library"
+            "Classic Library"
         case .woodCabin:
-            return "Wood Cabin"
+            "Wood Cabin"
         case .customImage:
-            return "Custom Image"
+            "Custom Image"
         }
     }
 }

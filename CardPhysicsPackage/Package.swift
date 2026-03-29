@@ -1,10 +1,10 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.3
 import PackageDescription
 
 let package = Package(
     name: "CardPhysicsPackage",
     platforms: [
-        .iOS(.v26)
+        .iOS("26.4")
     ],
     products: [
         .library(
@@ -17,10 +17,6 @@ let package = Package(
             name: "CardPhysicsKit",
             resources: [
                 .process("Resources")
-            ],
-            swiftSettings: [
-                .enableUpcomingFeature("ExistentialAny"),
-                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         .testTarget(

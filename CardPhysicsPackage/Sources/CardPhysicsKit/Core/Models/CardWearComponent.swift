@@ -10,29 +10,29 @@ public enum WearLevel: Int, CaseIterable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .none: return "None"
-        case .light: return "Light"
-        case .moderate: return "Moderate"
-        case .heavy: return "Heavy"
-        case .extreme: return "Extreme"
+        case .none: "None"
+        case .light: "Light"
+        case .moderate: "Moderate"
+        case .heavy: "Heavy"
+        case .extreme: "Extreme"
         }
     }
 
     /// Determines wear level from interaction count.
     public static func from(interactionCount: Int) -> WearLevel {
         switch interactionCount {
-        case 0..<3: return .none
-        case 3..<8: return .light
-        case 8..<15: return .moderate
-        case 15..<25: return .heavy
-        default: return .extreme
+        case 0..<3: .none
+        case 3..<8: .light
+        case 8..<15: .moderate
+        case 15..<25: .heavy
+        default: .extreme
         }
     }
 }
 
 /// Component that tracks wear state for a card entity.
 @MainActor
-public final class CardWearComponent: Sendable {
+public final class CardWearComponent {
     public var interactionCount: Int = 0
     public var currentWearLevel: WearLevel = .none
 

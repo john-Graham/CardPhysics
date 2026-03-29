@@ -11,11 +11,11 @@ public enum FeltColor: String, CaseIterable, Sendable {
     /// The base RGB values for texture generation.
     public var rgb: (r: CGFloat, g: CGFloat, b: CGFloat) {
         switch self {
-        case .green:    return (0.02, 0.18, 0.06)
-        case .blue:     return (0.04, 0.08, 0.22)
-        case .red:      return (0.22, 0.04, 0.04)
-        case .black:    return (0.06, 0.06, 0.06)
-        case .burgundy: return (0.20, 0.04, 0.08)
+        case .green:    (0.02, 0.18, 0.06)
+        case .blue:     (0.04, 0.08, 0.22)
+        case .red:      (0.22, 0.04, 0.04)
+        case .black:    (0.06, 0.06, 0.06)
+        case .burgundy: (0.20, 0.04, 0.08)
         }
     }
 
@@ -37,11 +37,11 @@ public enum WoodFinish: String, CaseIterable, Sendable {
     /// The base RGB values for texture generation.
     public var rgb: (r: CGFloat, g: CGFloat, b: CGFloat) {
         switch self {
-        case .mahogany: return (0.40, 0.18, 0.08)
-        case .oak:      return (0.45, 0.32, 0.18)
-        case .walnut:   return (0.28, 0.16, 0.08)
-        case .ebony:    return (0.10, 0.08, 0.06)
-        case .maple:    return (0.55, 0.42, 0.28)
+        case .mahogany: (0.40, 0.18, 0.08)
+        case .oak:      (0.45, 0.32, 0.18)
+        case .walnut:   (0.28, 0.16, 0.08)
+        case .ebony:    (0.10, 0.08, 0.06)
+        case .maple:    (0.55, 0.42, 0.28)
         }
     }
 
@@ -55,7 +55,7 @@ public enum WoodFinish: String, CaseIterable, Sendable {
 /// Configuration for the table's visual theme.
 @Observable
 @MainActor
-public final class TableThemeSettings: Sendable {
+public final class TableThemeSettings {
     public var feltColor: FeltColor = .green
     public var woodFinish: WoodFinish = .mahogany
 

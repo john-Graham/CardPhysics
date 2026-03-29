@@ -10,10 +10,9 @@ private func moveCardSafely(
     _ card: Entity,
     to transform: Transform,
     duration: TimeInterval = 0.3,
-    timingFunction: AnimationTimingFunction = .easeInOut
+    timingFunction: AnimationTimingFunction = .easeInOut,
+    curvature: Float = 0.0
 ) {
-    let curvature: Float = 0.0  // Cards in hands are flat
-
     let safeTransform = CollisionUtils.validateCardTransform(
         transform,
         cardWidth: CardEntity3D.cardWidth,
@@ -29,9 +28,9 @@ private func moveCardSafely(
 /// Validate a position against table collision
 private func validateCardPosition(
     _ position: SIMD3<Float>,
-    rotation: simd_quatf
+    rotation: simd_quatf,
+    curvature: Float = 0.0
 ) -> SIMD3<Float> {
-    let curvature: Float = 0.0
     let transform = Transform(rotation: rotation, translation: position)
 
     let safeTransform = CollisionUtils.validateCardTransform(
@@ -44,6 +43,14 @@ private func validateCardPosition(
     )
 
     return safeTransform.translation
+}
+
+/// Apply curvature to a card's mesh for the in-hand look
+private func applyCardCurvature(_ card: Entity, curvature: Float) {
+    guard let modelEntity = card as? ModelEntity,
+          var modelComponent = modelEntity.model else { return }
+    modelComponent.mesh = CurvedCardMesh.mesh(curvature: curvature)
+    modelEntity.model = modelComponent
 }
 
 // MARK: - Fan Cards
@@ -150,7 +157,17 @@ public func fanCardsInHands() async {
     // Wait for stacking animation to complete
     try? await Task.sleep(for: .seconds(0.6))
 
-    // TODO: STEP 2 will fan them out from this known stacked orientation
+    // STEP 2: Apply curvature and fan out from stacked position
+    for card in cards {
+        let side = cardSideAssignments[ObjectIdentifier(card)] ?? 1
+        let sideSettings = settings.inHandsSettings(for: side)
+        if sideSettings.curvature != 0 {
+            applyCardCurvature(card, curvature: sideSettings.curvature)
+        }
+    }
+
+    // Update positions to fan out with curvature applied
+    updateInHandsCardPositions()
 }
 
 /// Flips a card 180 degrees around the X axis with a short animation.
@@ -333,9 +350,12 @@ internal func updateInHandsCardPositions() {
                 cardPosition = pivotPoint
             }
 
+            // Apply curvature to card mesh
+            applyCardCurvature(card, curvature: sideSettings.curvature)
+
             // Update card transform instantly (no animation for real-time feedback)
             // Validate position to prevent table penetration
-            let safePosition = validateCardPosition(cardPosition, rotation: cardRotation)
+            let safePosition = validateCardPosition(cardPosition, rotation: cardRotation, curvature: sideSettings.curvature)
             card.position = safePosition
             card.orientation = cardRotation
         }

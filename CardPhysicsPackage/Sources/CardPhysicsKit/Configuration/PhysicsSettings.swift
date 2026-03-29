@@ -3,21 +3,23 @@ import Foundation
 /// Settings for in-hands fan animation for a specific player side
 @Observable
 @MainActor
-public final class InHandsSideSettings: Sendable {
-    public var fanAngle: Float = 0.4      // Total fan angle (~23° spread for natural fan)
-    public var tiltAngle: Float = 0.52    // Tilt back angle in radians (~30° backward tilt for natural viewing)
-    public var arcRadius: Float = 0.3     // Radius of the fan arc
-    public var verticalSpacing: Float = 0.015  // Vertical spacing between cards
-    public var rotationOffset: Float = 0.0  // Additional Y-axis rotation offset (for flipping face/back)
+public final class InHandsSideSettings {
+    public var fanAngle: Float = -0.85      // Total fan angle (~-49° natural fan)
+    public var tiltAngle: Float = -0.38     // Tilt back angle in radians (~-22°, shows face from overhead cam)
+    public var arcRadius: Float = 0.20      // Radius of the fan arc (~35% card face visible)
+    public var verticalSpacing: Float = 0.002  // Vertical spacing between cards (very tight)
+    public var rotationOffset: Float = 0.035  // Additional Y-axis rotation offset (~2°)
+    public var curvature: Float = -0.015     // Card curvature away from player (meters, 0 = flat)
 
     public init() {}
 
-    public init(fanAngle: Float, tiltAngle: Float, arcRadius: Float, verticalSpacing: Float, rotationOffset: Float = 0.0) {
+    public init(fanAngle: Float, tiltAngle: Float, arcRadius: Float, verticalSpacing: Float, rotationOffset: Float = 0.0, curvature: Float = -0.012) {
         self.fanAngle = fanAngle
         self.tiltAngle = tiltAngle
         self.arcRadius = arcRadius
         self.verticalSpacing = verticalSpacing
         self.rotationOffset = rotationOffset
+        self.curvature = curvature
     }
 }
 
@@ -28,16 +30,16 @@ public enum ShadowQuality: String, CaseIterable, Sendable {
 
     public var mapResolution: Int {
         switch self {
-        case .low: return 256
-        case .medium: return 512
-        case .high: return 1024
+        case .low: 256
+        case .medium: 512
+        case .high: 1024
         }
     }
 }
 
 @Observable
 @MainActor
-public final class PhysicsSettings: Sendable {
+public final class PhysicsSettings {
 
     // MARK: - Deal Animation
     public var dealDuration: Double = 0.5
@@ -58,11 +60,11 @@ public final class PhysicsSettings: Sendable {
 
     public func inHandsSettings(for side: Int) -> InHandsSideSettings {
         switch side {
-        case 1: return inHandsSide1
-        case 2: return inHandsSide2
-        case 3: return inHandsSide3
-        case 4: return inHandsSide4
-        default: return inHandsSide1
+        case 1: inHandsSide1
+        case 2: inHandsSide2
+        case 3: inHandsSide3
+        case 4: inHandsSide4
+        default: inHandsSide1
         }
     }
 

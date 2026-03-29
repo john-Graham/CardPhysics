@@ -7,7 +7,7 @@ public struct CardPhysicsView: View {
     @State private var settings = PhysicsSettings()
     @State private var panelState = PanelState()
     @State private var sceneKey = UUID()
-    @State private var cameraPosition: SIMD3<Float> = [0, 0.55, 0.41]
+    @State private var cameraPosition: SIMD3<Float> = [0, 0.55, 0.54]
     @State private var cameraTarget: SIMD3<Float> = [0, 0, 0]
     @State private var coordinator = SceneCoordinator()
     @State private var selectedDealMode: DealMode = .twelve
@@ -180,7 +180,7 @@ public struct CardPhysicsView: View {
                     cameraTarget: $cameraTarget,
                     isPresented: $panelState.showCameraSettings,
                     onReset: {
-                        cameraPosition = [0, 0.55, 0.41]
+                        cameraPosition = [0, 0.55, 0.54]
                         cameraTarget = [0, 0, 0]
                         resetScene()
                     }

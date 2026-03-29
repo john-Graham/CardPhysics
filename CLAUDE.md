@@ -7,7 +7,7 @@ iOS sandbox app for developing and tuning realistic card animations and physics 
 ```
 CardPhysics/
 ├── CardPhysicsPackage/          # Swift Package with all core logic (CardPhysicsKit library)
-│   ├── Package.swift            # swift-tools-version: 6.2, iOS 26+
+│   ├── Package.swift            # swift-tools-version: 6.3, iOS 26.4+
 │   ├── Sources/CardPhysicsKit/  # 3D scene, physics, entities, textures, UI
 │   └── Tests/CardPhysicsKitTests/
 ├── CardPhysicsApp/              # Xcode project wrapper (thin shell around CardPhysicsKit)
@@ -22,7 +22,7 @@ CardPhysics/
 
 ## Build and Run
 1. Open `CardPhysicsApp/CardPhysicsApp.xcodeproj` in Xcode 16.3+
-2. Select an iOS 26+ simulator or device
+2. Select an iOS 26.4+ simulator or device
 3. Build and run the CardPhysicsApp scheme
 
 The app is built through the Xcode project, which depends on `CardPhysicsPackage/` as a local Swift package.
@@ -43,8 +43,8 @@ xcrun devicectl device process launch --device 00008150-0010281E2261401C johndgr
 ```
 
 ## Key Conventions
-- **Swift 6.1+** with StrictConcurrency and ExistentialAny enabled in the package
-- **iOS 26.0+** minimum deployment target (currently 26.2)
+- **Swift 6.3** with strict concurrency enabled by default in Swift 6 language mode
+- **iOS 26.4+** minimum deployment target (currently 26.4)
 - **SwiftUI + RealityKit** for all UI and 3D rendering
 - **Modular folder structure** in CardPhysicsKit: feature-based organization (Core, Configuration, Scene, Entities, Geometry, Rendering, Animations, Effects, UI, Storage) with 49 files across 10 top-level folders
 - **Swift extensions for code splitting**: Large classes split into focused extension files (CardPhysicsScene: 7 files, CardView: 4 files, ProceduralTextureGenerator: 4 files, CardPhysicsView: components/panels extracted)
