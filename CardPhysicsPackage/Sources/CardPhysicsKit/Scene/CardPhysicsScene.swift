@@ -1,6 +1,47 @@
 import SwiftUI
 import RealityKit
 
+// MARK: - Extension Summary
+// CardPhysicsScene functionality is distributed across 7 files using Swift extensions.
+// The main struct + extensions pattern keeps each file focused on a single responsibility.
+//
+// CardPhysicsScene.swift (this file)              — Scene/
+//   Core struct definition, @State properties, initializer, RealityView body,
+//   and resetCards(). Wires up coordinator actions and collision subscriptions.
+//
+// CardPhysicsScene+Setup.swift                    — Scene/
+//   Scene construction: createCamera(), createTable(), createDeck(count:),
+//   addRailPhysics(to:...), addDebugLabels(to:...), createTextLabel(_:size:).
+//   Builds the 3D environment (camera, wood table, felt surface, rail colliders, card deck).
+//
+// CardPhysicsScene+Environment.swift              — Scene/
+//   Lighting and environment: setupLighting(), setupShadowLight(),
+//   removeShadowLight(), setupFallbackLighting(), updateSkybox(),
+//   updateTableMaterials(). Manages HDRI, fallback studio lights, shadow
+//   directional light, skybox creation/removal, and live felt/wood material swaps.
+//
+// CardPhysicsScene+Dealing.swift                  — Animations/
+//   Card dealing: dealCards(mode:), dealCardsStandard(), dealCardsEuchre(),
+//   dealCardsInHands(), dealSingleCard(_:toSide:delay:randomSpread:),
+//   stackCardsBySide(). Physics-driven throw with spin, Euchre bundle dealing,
+//   and post-deal stacking.
+//
+// CardPhysicsScene+InHands.swift                  — Animations/
+//   In-hands display: fanCardsInHands(), flipCard(_:entity),
+//   updateInHandsCardPositions(). Stacks cards vertically at each player
+//   position, fans them in an arc, supports real-time slider repositioning,
+//   and tap-to-flip.
+//
+// CardPhysicsScene+PickUp.swift                   — Animations/
+//   Card pickup: gatherAndPickUp(corner:). Two-phase animation that gathers
+//   all cards to a table corner, then lifts and removes them from the scene.
+//
+// CardPhysicsScene+Wear.swift                     — Animations/
+//   Card wear and effects: handleCollision(entityA:entityB:),
+//   handleFeltCollision(entityA:entityB:), incrementCardWear(_:),
+//   applyWearTexture(to:). Collision-driven wear tracking, felt disturbance
+//   particle bursts, and worn texture overlay application.
+
 @MainActor
 public struct CardPhysicsScene: View {
     @State internal var rootEntity = Entity()

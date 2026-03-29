@@ -5,16 +5,7 @@ import PhotosUI
 @MainActor
 public struct CardPhysicsView: View {
     @State private var settings = PhysicsSettings()
-    @State private var showDealSettings = false
-    @State private var showPickUpSettings = false
-    @State private var showInHandsSettings = false
-    @State private var showCardDesign = false
-    @State private var showRoomBackground = false
-    @State private var showTableTheme = false
-    @State private var showLighting = false
-    @State private var showCardEffects = false
-    @State private var showEnvironmentalEffects = false
-    @State private var showCameraSettings = false
+    @State private var panelState = PanelState()
     @State private var sceneKey = UUID()
     @State private var cameraPosition: SIMD3<Float> = [0, 0.55, 0.41]
     @State private var cameraTarget: SIMD3<Float> = [0, 0, 0]
@@ -107,53 +98,53 @@ public struct CardPhysicsView: View {
                             }
 
                             Button("Deal Settings") {
-                                closeAllPanels()
-                                showDealSettings = true
+                                panelState.closeAll()
+                                panelState.showDealSettings = true
                             }
 
                             Button("Pick Up Settings") {
-                                closeAllPanels()
-                                showPickUpSettings = true
+                                panelState.closeAll()
+                                panelState.showPickUpSettings = true
                             }
 
                             Button("In Hands Settings") {
-                                closeAllPanels()
-                                showInHandsSettings = true
+                                panelState.closeAll()
+                                panelState.showInHandsSettings = true
                             }
 
                             Button("Card Design") {
-                                closeAllPanels()
-                                showCardDesign = true
+                                panelState.closeAll()
+                                panelState.showCardDesign = true
                             }
 
                             Button("Table Theme") {
-                                closeAllPanels()
-                                showTableTheme = true
+                                panelState.closeAll()
+                                panelState.showTableTheme = true
                             }
 
                             Button("Room Background") {
-                                closeAllPanels()
-                                showRoomBackground = true
+                                panelState.closeAll()
+                                panelState.showRoomBackground = true
                             }
 
                             Button("Lighting") {
-                                closeAllPanels()
-                                showLighting = true
+                                panelState.closeAll()
+                                panelState.showLighting = true
                             }
 
                             Button("Card Effects") {
-                                closeAllPanels()
-                                showCardEffects = true
+                                panelState.closeAll()
+                                panelState.showCardEffects = true
                             }
 
                             Button("Environmental Effects") {
-                                closeAllPanels()
-                                showEnvironmentalEffects = true
+                                panelState.closeAll()
+                                panelState.showEnvironmentalEffects = true
                             }
 
                             Button("Camera") {
-                                closeAllPanels()
-                                showCameraSettings = true
+                                panelState.closeAll()
+                                panelState.showCameraSettings = true
                             }
 
                             Divider()
@@ -183,11 +174,11 @@ public struct CardPhysicsView: View {
             }
 
             // Camera control panel
-            if showCameraSettings {
+            if panelState.showCameraSettings {
                 CameraControlPanel(
                     cameraPosition: $cameraPosition,
                     cameraTarget: $cameraTarget,
-                    isPresented: $showCameraSettings,
+                    isPresented: $panelState.showCameraSettings,
                     onReset: {
                         cameraPosition = [0, 0.55, 0.41]
                         cameraTarget = [0, 0, 0]
@@ -198,38 +189,38 @@ public struct CardPhysicsView: View {
             }
 
             // Deal Settings Panel
-            if showDealSettings {
+            if panelState.showDealSettings {
                 DealSettingsPanel(
                     settings: settings,
-                    isPresented: $showDealSettings
+                    isPresented: $panelState.showDealSettings
                 )
                 .transition(.move(edge: .trailing))
             }
 
             // Pick Up Settings Panel
-            if showPickUpSettings {
+            if panelState.showPickUpSettings {
                 PickUpSettingsPanel(
                     settings: settings,
-                    isPresented: $showPickUpSettings
+                    isPresented: $panelState.showPickUpSettings
                 )
                 .transition(.move(edge: .trailing))
             }
 
             // In Hands Settings Panel
-            if showInHandsSettings {
+            if panelState.showInHandsSettings {
                 InHandsSettingsPanel(
                     settings: settings,
-                    isPresented: $showInHandsSettings,
+                    isPresented: $panelState.showInHandsSettings,
                     coordinator: coordinator
                 )
                 .transition(.move(edge: .trailing))
             }
 
             // Card Design Panel
-            if showCardDesign {
+            if panelState.showCardDesign {
                 CardDesignPanel(
                     settings: settings,
-                    isPresented: $showCardDesign,
+                    isPresented: $panelState.showCardDesign,
                     onDesignChanged: {
                         CardTextureGenerator.shared.invalidateAll()
                         resetScene()
@@ -239,60 +230,60 @@ public struct CardPhysicsView: View {
             }
 
             // Room Background Panel
-            if showRoomBackground {
+            if panelState.showRoomBackground {
                 RoomBackgroundPanel(
                     settings: settings,
-                    isPresented: $showRoomBackground
+                    isPresented: $panelState.showRoomBackground
                 )
                 .transition(.move(edge: .trailing))
             }
 
             // Table Theme Panel
-            if showTableTheme {
+            if panelState.showTableTheme {
                 TableThemePanel(
                     settings: settings,
-                    isPresented: $showTableTheme
+                    isPresented: $panelState.showTableTheme
                 )
                 .transition(.move(edge: .trailing))
             }
 
             // Lighting Panel
-            if showLighting {
+            if panelState.showLighting {
                 LightingPanel(
                     settings: settings,
-                    isPresented: $showLighting
+                    isPresented: $panelState.showLighting
                 )
                 .transition(.move(edge: .trailing))
             }
 
             // Card Effects Panel
-            if showCardEffects {
+            if panelState.showCardEffects {
                 CardEffectsPanel(
                     settings: settings,
-                    isPresented: $showCardEffects
+                    isPresented: $panelState.showCardEffects
                 )
                 .transition(.move(edge: .trailing))
             }
 
             // Environmental Effects Panel
-            if showEnvironmentalEffects {
+            if panelState.showEnvironmentalEffects {
                 EnvironmentalEffectsPanel(
                     settings: settings,
-                    isPresented: $showEnvironmentalEffects
+                    isPresented: $panelState.showEnvironmentalEffects
                 )
                 .transition(.move(edge: .trailing))
             }
         }
-        .animation(.easeInOut, value: showDealSettings)
-        .animation(.easeInOut, value: showPickUpSettings)
-        .animation(.easeInOut, value: showInHandsSettings)
-        .animation(.easeInOut, value: showCardDesign)
-        .animation(.easeInOut, value: showRoomBackground)
-        .animation(.easeInOut, value: showTableTheme)
-        .animation(.easeInOut, value: showLighting)
-        .animation(.easeInOut, value: showCardEffects)
-        .animation(.easeInOut, value: showEnvironmentalEffects)
-        .animation(.easeInOut, value: showCameraSettings)
+        .animation(.easeInOut, value: panelState.showDealSettings)
+        .animation(.easeInOut, value: panelState.showPickUpSettings)
+        .animation(.easeInOut, value: panelState.showInHandsSettings)
+        .animation(.easeInOut, value: panelState.showCardDesign)
+        .animation(.easeInOut, value: panelState.showRoomBackground)
+        .animation(.easeInOut, value: panelState.showTableTheme)
+        .animation(.easeInOut, value: panelState.showLighting)
+        .animation(.easeInOut, value: panelState.showCardEffects)
+        .animation(.easeInOut, value: panelState.showEnvironmentalEffects)
+        .animation(.easeInOut, value: panelState.showCameraSettings)
         .persistentSystemOverlays(.hidden)
     }
 
@@ -314,19 +305,6 @@ public struct CardPhysicsView: View {
     private func resetScene() {
         sceneKey = UUID()
         coordinator = SceneCoordinator()
-    }
-
-    private func closeAllPanels() {
-        showDealSettings = false
-        showPickUpSettings = false
-        showInHandsSettings = false
-        showCardDesign = false
-        showRoomBackground = false
-        showTableTheme = false
-        showLighting = false
-        showCardEffects = false
-        showEnvironmentalEffects = false
-        showCameraSettings = false
     }
 
     private func printCurrentSettings() {

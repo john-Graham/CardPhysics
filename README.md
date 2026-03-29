@@ -29,7 +29,7 @@ The `CardPhysicsView` includes the complete 3D scene with floating controls, set
 CardPhysics/
 ├── CardPhysicsPackage/              # Swift Package with all core logic (CardPhysicsKit library)
 │   ├── Package.swift                # swift-tools-version: 6.2, iOS 26+
-│   └── Sources/CardPhysicsKit/      # 41 files organized in modular folders
+│   └── Sources/CardPhysicsKit/      # 49 files organized in modular folders
 │       ├── Core/Models/             # Card, Suit, Rank, CardWearComponent
 │       ├── Configuration/           # PhysicsSettings, SceneCoordinator, themes
 │       ├── Scene/                   # CardPhysicsScene + Setup/Environment extensions
@@ -47,10 +47,7 @@ CardPhysics/
 │   ├── CardPhysicsAppTests/         # Unit tests
 │   ├── CardPhysicsAppUITests/       # UI automation tests
 │   └── card-physics.rtf             # Reference doc on RealityKit card physics theory
-├── CardPhysics/                     # Alternate @main entry using SwiftUI App protocol
-├── Sources/CardPhysicsApp/          # SPM executable target (placeholder)
-├── Config/                          # Reserved for configuration files
-└── Package.swift                    # Root SPM manifest (swift-tools-version: 6.2)
+└── Config/                          # Reserved for configuration files
 ```
 
 ## Getting Started
@@ -112,9 +109,12 @@ Real-time sliders for:
 ## Architecture Highlights
 
 ### Modular Organization
-41 files organized across 10 feature-based folders in CardPhysicsKit, replacing the original flat structure. Major components split using Swift extensions:
-- **CardPhysicsScene**: 1,466 → 217 lines (85% reduction via 6 extension files)
+49 files organized across 10 feature-based folders in CardPhysicsKit. Major components split using Swift extensions:
+- **CardPhysicsScene**: 1,466 → 217 lines (85% reduction via 7 extension files)
 - **CardPhysicsView**: 1,797 → 328 lines (82% reduction via component extraction)
+- **CardView**: 757 → 133 lines (82% reduction via 4 files: FaceStyles, BackStyles, PipLayouts)
+- **ProceduralTextureGenerator**: 438 → 57 lines (87% reduction via 4 files: Felt, Wood, CardWear)
+- **PanelState**: `@Observable` class consolidating 10 panel visibility booleans
 
 ### Design Patterns
 - **Factory Pattern**: `CardEntity3D.makeCard()` centralizes entity creation

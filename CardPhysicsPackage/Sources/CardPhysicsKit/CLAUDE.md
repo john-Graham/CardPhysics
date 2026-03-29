@@ -24,7 +24,10 @@ CardPhysicsKit/
 │   └── CurvedCardMesh.swift  # Parabolic card curvature
 ├── Rendering/                # Textures and 2D views
 │   ├── CardTextureGenerator.swift      # Card face/back textures with caching
-│   ├── ProceduralTextureGenerator.swift # Felt and wood PBR materials
+│   ├── ProceduralTextureGenerator.swift # Shared cache, helpers, texture conversions
+│   ├── FeltMaterialGenerator.swift     # Felt albedo, roughness, and normal maps
+│   ├── WoodMaterialGenerator.swift     # Wood albedo, roughness, and normal maps
+│   ├── CardWearTextureGenerator.swift  # Paper grain and card wear overlays
 │   └── CardView.swift                  # 2D SwiftUI card rendering
 ├── Animations/               # Scene animation extensions
 │   ├── CardPhysicsScene+Wear.swift    # Collision tracking and wear application

@@ -16,11 +16,7 @@ CardPhysics/
 │   ├── CardPhysicsAppTests/     # Unit tests
 │   ├── CardPhysicsAppUITests/   # UI automation tests
 │   └── card-physics.rtf         # Reference doc on RealityKit card physics theory
-├── CardPhysics/                 # Alternate @main entry using SwiftUI App protocol
-├── Sources/CardPhysicsApp/      # SPM executable target (@main stub, placeholder only)
 ├── Config/                      # Reserved for configuration files (currently empty)
-├── Package.swift                # Root SPM manifest (swift-tools-version: 6.2)
-├── create_project.sh            # One-time script that scaffolded the Xcode project
 └── README.md
 ```
 
@@ -29,7 +25,7 @@ CardPhysics/
 2. Select an iOS 26+ simulator or device
 3. Build and run the CardPhysicsApp scheme
 
-The root `Package.swift` defines an SPM executable target (`Sources/CardPhysicsApp/`) but the real app is built through the Xcode project, which depends on `CardPhysicsPackage/` as a local Swift package.
+The app is built through the Xcode project, which depends on `CardPhysicsPackage/` as a local Swift package.
 
 ### Installing on Physical Device
 John's iPhone (iOS 26.3) is usually available for installation, either:
@@ -50,8 +46,9 @@ xcrun devicectl device process launch --device 00008150-0010281E2261401C johndgr
 - **Swift 6.1+** with StrictConcurrency and ExistentialAny enabled in the package
 - **iOS 26.0+** minimum deployment target (currently 26.2)
 - **SwiftUI + RealityKit** for all UI and 3D rendering
-- **Modular folder structure** in CardPhysicsKit: feature-based organization (Core, Configuration, Scene, Entities, Geometry, Rendering, Animations, Effects, UI, Storage) with 41 files across 10 top-level folders
-- **Swift extensions for code splitting**: Large classes split into focused extension files (CardPhysicsScene: 6 files, CardPhysicsView: components/panels extracted)
+- **Modular folder structure** in CardPhysicsKit: feature-based organization (Core, Configuration, Scene, Entities, Geometry, Rendering, Animations, Effects, UI, Storage) with 49 files across 10 top-level folders
+- **Swift extensions for code splitting**: Large classes split into focused extension files (CardPhysicsScene: 7 files, CardView: 4 files, ProceduralTextureGenerator: 4 files, CardPhysicsView: components/panels extracted)
+- **`@Observable` PanelState**: Panel visibility state consolidated into a single `@Observable` class instead of scattered `@State` booleans
 - **Liquid Glass** design language for all floating panels and buttons (iOS 26 `.glassEffect`)
 - **GestureComponent** (iOS 26 RealityKit) for entity-level tap gestures (feature-flagged)
 - **Apple Testing framework** for unit tests
@@ -59,11 +56,11 @@ xcrun devicectl device process launch --device 00008150-0010281E2261401C johndgr
 - Landscape-only orientation, locked at app launch
 
 ## Architecture
-- `CardPhysicsKit` is the framework with all substance (41 files organized in modular folders): 3D scene management, physics simulation, procedural texture generation, card entities, curved mesh generation, animation triggers, and the interactive SwiftUI control panel
-- **Modular organization**: Feature-based folders (Scene/, Animations/, UI/, Rendering/) replace flat structure. Large files split: CardPhysicsView (1,797→328 lines), CardPhysicsScene (1,466→217 lines)
-- **Extension-based splitting**: CardPhysicsScene methods distributed across 6 files via Swift extensions (Setup, Environment, Wear, Dealing, PickUp, InHands)
+- `CardPhysicsKit` is the framework with all substance (49 files organized in modular folders): 3D scene management, physics simulation, procedural texture generation, card entities, curved mesh generation, animation triggers, and the interactive SwiftUI control panel
+- **Modular organization**: Feature-based folders (Scene/, Animations/, UI/, Rendering/) replace flat structure. Large files split: CardPhysicsView (1,797→328 lines), CardPhysicsScene (1,466→217 lines), CardView (757→133 lines), ProceduralTextureGenerator (438→57 lines)
+- **Extension-based splitting**: CardPhysicsScene methods distributed across 7 files via Swift extensions (Setup, Environment, Wear, Dealing, PickUp, InHands). CardView split into 4 files (FaceStyles, BackStyles, PipLayouts). ProceduralTextureGenerator split into 4 files by material type (Felt, Wood, CardWear)
+- **Panel state management**: `PanelState` `@Observable` class consolidates 10 panel visibility booleans (replaces scattered `@State` vars in CardPhysicsView)
 - `CardPhysicsApp` is a thin shell: `@main` entry point, orientation lock, `ContentView` wrapping `CardPhysicsView`
-- `CardPhysics/CardPhysicsApp.swift` is a separate `@main` entry using the SwiftUI `App` protocol that imports CardPhysicsKit directly
 
 ## Open GitHub Issues (planned changes)
 - #1 Deal button: add long-press menu with multiple deal modes
