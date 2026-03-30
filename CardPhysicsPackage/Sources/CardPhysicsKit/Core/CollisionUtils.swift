@@ -1,135 +1,160 @@
 import RealityKit
 
+// MARK: - Table Geometry Constants
+
+@MainActor
+enum TableGeometry {
+    static let tableWidth: Float = 1.4
+    static let tableDepth: Float = 1.0
+    static let railThickness: Float = 0.07
+    static let railHeight: Float = 0.035
+
+    /// Top of the felt box (5mm box centered at Y=0.0025)
+    static let feltSurfaceY: Float = 0.005
+
+    /// Inner playable area (inside rail inner edges)
+    static let innerMinX: Float = -(tableWidth / 2 - railThickness)   // -0.63
+    static let innerMaxX: Float = tableWidth / 2 - railThickness      //  0.63
+    static let innerMinZ: Float = -(tableDepth / 2 - railThickness)   // -0.43
+    static let innerMaxZ: Float = tableDepth / 2 - railThickness      //  0.43
+}
+
+// MARK: - Collision Utilities
+
 @MainActor
 enum CollisionUtils {
-    /// Calculate minimum safe Y position for a card accounting for rotation and curvature
-    /// - Parameters:
-    ///   - rotation: Card's rotation quaternion
-    ///   - curvature: Card's parabolic curvature value (meters)
-    ///   - cardHeight: Card thickness (meters)
-    /// - Returns: Minimum Y position to keep card above origin plane
-    static func minimumCardY(
-        rotation: simd_quatf,
-        curvature: Float,
-        cardHeight: Float
-    ) -> Float {
-        // Base clearance is half the card thickness
-        var minY = cardHeight / 2.0
 
-        // Add curvature displacement (maximum bow height)
-        if curvature != 0 {
-            minY += abs(curvature)
-        }
+    /// Compute the 4 card corners in world space after applying rotation.
+    /// Corners are at the card's mid-plane (Y=0 in local space).
+    static func cardCornerPositions(
+        transform: Transform,
+        cardWidth: Float,
+        cardDepth: Float
+    ) -> (SIMD3<Float>, SIMD3<Float>, SIMD3<Float>, SIMD3<Float>) {
+        let halfW = cardWidth / 2
+        let halfD = cardDepth / 2
 
-        // Account for rotation: if card is tilted, need more clearance
-        // Extract rotation around X and Z axes
-        let rotationMatrix = simd_float3x3(rotation)
-        let upVector = rotationMatrix.columns.1  // Y-axis after rotation
+        let rotation = transform.rotation
+        let t = transform.translation
 
-        // If card is tilted (Y component < 1), add clearance
-        // proportional to the tilt angle
-        let tiltFactor = abs(1.0 - upVector.y)
-        if tiltFactor > 0.01 {
-            // Add extra clearance based on card dimensions and tilt
-            let maxDimension = max(CardEntity3D.cardWidth, CardEntity3D.cardDepth)
-            minY += maxDimension * tiltFactor * 0.5
-        }
+        let c0 = rotation.act(SIMD3(-halfW, 0, -halfD)) + t
+        let c1 = rotation.act(SIMD3( halfW, 0, -halfD)) + t
+        let c2 = rotation.act(SIMD3(-halfW, 0,  halfD)) + t
+        let c3 = rotation.act(SIMD3( halfW, 0,  halfD)) + t
 
-        return minY
+        return (c0, c1, c2, c3)
     }
 
-    /// Validate transform against table collision, return corrected transform if needed
+    /// Calculate how much to raise a card so that no corner or the curved center
+    /// penetrates the felt surface.
+    /// - Returns: The Y offset to add (0 if no raise needed)
+    static func minimumYRaise(
+        transform: Transform,
+        cardWidth: Float,
+        cardHeight: Float,
+        cardDepth: Float,
+        curvature: Float
+    ) -> Float {
+        let (c0, c1, c2, c3) = cardCornerPositions(
+            transform: transform,
+            cardWidth: cardWidth,
+            cardDepth: cardDepth
+        )
+
+        let halfThickness = cardHeight / 2
+
+        // Lowest corner Y, offset by half card thickness below the mid-plane
+        let lowestCornerY = min(min(c0.y, c1.y), min(c2.y, c3.y)) - halfThickness
+
+        // Curvature pushes the center of the card downward (in local space)
+        // by abs(curvature). Transform that point to world space.
+        var lowestY = lowestCornerY
+        if curvature != 0 {
+            let centerBottom = transform.rotation.act(
+                SIMD3(0, -halfThickness - abs(curvature), 0)
+            ) + transform.translation
+            lowestY = min(lowestY, centerBottom.y)
+        }
+
+        let gap = TableGeometry.feltSurfaceY - lowestY
+        return gap > 0 ? gap : 0
+    }
+
+    /// Shift the card center so no corner extends past the inner rail edges.
+    /// - Returns: Corrected translation
+    static func clampToBoundaries(
+        transform: Transform,
+        cardWidth: Float,
+        cardDepth: Float
+    ) -> SIMD3<Float> {
+        let (c0, c1, c2, c3) = cardCornerPositions(
+            transform: transform,
+            cardWidth: cardWidth,
+            cardDepth: cardDepth
+        )
+
+        var translation = transform.translation
+
+        let minCX = min(min(c0.x, c1.x), min(c2.x, c3.x))
+        let maxCX = max(max(c0.x, c1.x), max(c2.x, c3.x))
+        let minCZ = min(min(c0.z, c1.z), min(c2.z, c3.z))
+        let maxCZ = max(max(c0.z, c1.z), max(c2.z, c3.z))
+
+        if minCX < TableGeometry.innerMinX {
+            translation.x += (TableGeometry.innerMinX - minCX)
+        } else if maxCX > TableGeometry.innerMaxX {
+            translation.x -= (maxCX - TableGeometry.innerMaxX)
+        }
+
+        if minCZ < TableGeometry.innerMinZ {
+            translation.z += (TableGeometry.innerMinZ - minCZ)
+        } else if maxCZ > TableGeometry.innerMaxZ {
+            translation.z -= (maxCZ - TableGeometry.innerMaxZ)
+        }
+
+        return translation
+    }
+
+    /// Validate a card transform against table collision, returning a corrected transform.
     /// - Parameters:
     ///   - transform: Desired card transform
     ///   - cardWidth: Card width in meters
     ///   - cardHeight: Card thickness in meters
     ///   - cardDepth: Card depth in meters
-    ///   - curvature: Card curvature value
-    ///   - scene: RealityKit scene for ray casting (optional, for future enhancement)
-    /// - Returns: Validated transform that won't penetrate the table
+    ///   - curvature: Card curvature value (meters of parabolic bow)
+    ///   - clampToBounds: Whether to clamp X/Z within rail boundaries
+    /// - Returns: Validated transform that won't penetrate the table or rails
     static func validateCardTransform(
         _ transform: Transform,
         cardWidth: Float,
         cardHeight: Float,
         cardDepth: Float,
         curvature: Float,
-        scene: Scene? = nil
+        clampToBounds: Bool = false
     ) -> Transform {
-        var validatedTransform = transform
+        var result = transform
 
-        // Calculate minimum safe Y position
-        let minY = minimumCardY(
-            rotation: transform.rotation,
-            curvature: curvature,
-            cardHeight: cardHeight
+        // Raise Y if any corner/center would penetrate the felt surface
+        let raise = minimumYRaise(
+            transform: result,
+            cardWidth: cardWidth,
+            cardHeight: cardHeight,
+            cardDepth: cardDepth,
+            curvature: curvature
         )
-
-        // Table surface is at Y=0, ensure card stays above it
-        let tableY: Float = 0.0
-        let requiredY = tableY + minY
-
-        // If card would penetrate table, raise it to safe height
-        if validatedTransform.translation.y < requiredY {
-            validatedTransform.translation.y = requiredY
+        if raise > 0 {
+            result.translation.y += raise
         }
 
-        return validatedTransform
-    }
+        // Optionally clamp X/Z to keep within rails
+        if clampToBounds {
+            result.translation = clampToBoundaries(
+                transform: result,
+                cardWidth: cardWidth,
+                cardDepth: cardDepth
+            )
+        }
 
-    /// Find table surface height below a given position using ray casting
-    /// - Parameters:
-    ///   - position: Position to cast ray from
-    ///   - scene: RealityKit scene to query
-    /// - Returns: Y coordinate of table surface, or nil if not found
-    static func findTableSurfaceBelow(
-        position: SIMD3<Float>,
-        scene: Scene
-    ) -> Float? {
-        // Ray cast downward from position
-        let rayOrigin = position
-        let rayDirection = SIMD3<Float>(0, -1, 0)  // Downward
-
-        // Perform ray cast query
-        // Note: RealityKit's scene.raycast is available but requires proper collision layers
-        // For now, we'll use a fixed table height assumption
-        // This can be enhanced with actual raycasting when needed
-
-        // Table surface is at Y=0 in our scene
-        return 0.0
-    }
-
-    /// Validate that a card's position doesn't penetrate table rails or boundaries
-    /// - Parameters:
-    ///   - position: Card position to validate
-    ///   - tableWidth: Table width (X dimension)
-    ///   - tableDepth: Table depth (Z dimension)
-    ///   - railHeight: Height of table rails
-    ///   - cardRadius: Approximate card radius for boundary checking
-    /// - Returns: Corrected position if needed
-    static func validateTableBoundaries(
-        position: SIMD3<Float>,
-        tableWidth: Float,
-        tableDepth: Float,
-        railHeight: Float,
-        cardRadius: Float
-    ) -> SIMD3<Float> {
-        var validatedPosition = position
-
-        // Keep cards within table boundaries (with some margin)
-        let halfWidth = tableWidth / 2.0 - cardRadius
-        let halfDepth = tableDepth / 2.0 - cardRadius
-
-        // Clamp X position
-        validatedPosition.x = max(-halfWidth, min(halfWidth, validatedPosition.x))
-
-        // Clamp Z position
-        validatedPosition.z = max(-halfDepth, min(halfDepth, validatedPosition.z))
-
-        // Ensure card stays above table surface and below reasonable height
-        let minY: Float = 0.001  // Just above table
-        let maxY: Float = 0.5    // Reasonable max height
-        validatedPosition.y = max(minY, min(maxY, validatedPosition.y))
-
-        return validatedPosition
+        return result
     }
 }

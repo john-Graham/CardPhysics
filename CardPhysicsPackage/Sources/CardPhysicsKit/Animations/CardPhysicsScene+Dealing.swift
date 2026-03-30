@@ -3,32 +3,6 @@ import RealityKit
 
 extension CardPhysicsScene {
 
-// MARK: - Safe Movement Wrapper
-
-/// Safely move a card to a target transform, validating against table collision
-private func moveCardSafely(
-    _ card: Entity,
-    to transform: Transform,
-    duration: TimeInterval = 0.3,
-    timingFunction: AnimationTimingFunction = .easeInOut
-) {
-    // Get current curvature for this card (default to 0 if not tracked)
-    let curvature: Float = 0.0  // Cards in dealing are flat
-
-    // Validate transform doesn't penetrate table/rails
-    let safeTransform = CollisionUtils.validateCardTransform(
-        transform,
-        cardWidth: CardEntity3D.cardWidth,
-        cardHeight: CardEntity3D.cardHeight,
-        cardDepth: CardEntity3D.cardDepth,
-        curvature: curvature,
-        scene: nil
-    )
-
-    // Use validated transform
-    card.move(to: safeTransform, relativeTo: nil, duration: duration, timingFunction: timingFunction)
-}
-
 // MARK: - Deal Modes
 
 public func dealCards(mode: DealMode) async {
@@ -40,6 +14,8 @@ public func dealCards(mode: DealMode) async {
     cardDataMap.removeAll()
     for hand in handEntities { hand.removeFromParent() }
     handEntities.removeAll()
+
+    cardsInFanState = false
 
     createDeck(count: mode.cardCount)
 
@@ -112,124 +88,15 @@ internal func dealCardsInHands() async {
         rootEntity.addChild(hand)
     }
 
-    // Deal cards evenly to each side, then arrange in fan
-    let cardsPerSide = cards.count / 4
-    var cardsBySide: [Int: [Entity]] = [1: [], 2: [], 3: [], 4: []]
-
-    // Distribute cards
+    // Distribute cards evenly to each side
     for (index, cardIndex) in cards.indices.reversed().enumerated() {
         let card = cards[cardIndex]
         let side = [1, 2, 3, 4][index % 4]
-        cardsBySide[side]?.append(card)
         cardSideAssignments[ObjectIdentifier(card)] = side
     }
 
-    // Animate cards to their fanned positions for each side
-    for side in 1...4 {
-        guard let sideCards = cardsBySide[side] else { continue }
-
-        let fanCenter = HandEntity3D.getFanCenterPosition(side: side)
-        let cardCount = sideCards.count
-
-        for (cardIndex, card) in sideCards.enumerated() {
-            // Start cards face-down (will animate to final orientation)
-            card.orientation = simd_quatf(angle: 0, axis: [1, 0, 0])
-
-            // Calculate fan arc parameters from per-side settings
-            let sideSettings = settings.inHandsSettings(for: side)
-            let fanAngle = sideSettings.fanAngle
-            let verticalOffset = sideSettings.verticalSpacing
-            let arcRadius = sideSettings.arcRadius
-
-            // Calculate position in fan (centered around middle card)
-            let normalizedIndex = Float(cardIndex) / Float(max(cardCount - 1, 1)) // 0.0 to 1.0
-            let fanProgress = normalizedIndex - 0.5 // -0.5 to 0.5
-
-            // Calculate arc position
-            let arcAngle = fanProgress * fanAngle
-
-            // Position based on side orientation
-            var cardPosition: SIMD3<Float>
-            var cardRotation: simd_quatf
-
-            // Quaternion components for proper card orientation
-            // Side-specific base rotation: Side 1 shows faces, Sides 2-4 show backs
-            let baseRotation: simd_quatf
-            switch side {
-            case 1:
-                // Player 1 (bottom): flip face-up so camera sees faces
-                baseRotation = simd_quatf(angle: .pi, axis: [1, 0, 0])
-            case 2, 3, 4:
-                // Players 2, 3, 4: keep face-down so camera sees backs
-                baseRotation = simd_quatf(angle: 0, axis: [1, 0, 0])
-            default:
-                baseRotation = simd_quatf(angle: 0, axis: [1, 0, 0])
-            }
-
-            let tiltQuat = simd_quatf(angle: sideSettings.tiltAngle, axis: [1, 0, 0])    // Tilt cards back
-            let fanQuat = simd_quatf(angle: arcAngle, axis: [0, 1, 0]) // Fan spread
-            let offsetQuat = simd_quatf(angle: sideSettings.rotationOffset, axis: [0, 1, 0]) // Rotation offset for flipping
-
-            switch side {
-            case 1: // Bottom - fan opens upward toward table center
-                cardPosition = SIMD3(
-                    fanCenter.x + sin(arcAngle) * arcRadius,
-                    fanCenter.y + Float(cardIndex) * verticalOffset,
-                    fanCenter.z - cos(arcAngle) * arcRadius + arcRadius
-                )
-                cardRotation = offsetQuat * fanQuat * tiltQuat * baseRotation
-
-            case 2: // Left - fan opens toward table center
-                cardPosition = SIMD3(
-                    fanCenter.x + cos(arcAngle) * arcRadius - arcRadius,
-                    fanCenter.y + Float(cardIndex) * verticalOffset,
-                    fanCenter.z + sin(arcAngle) * arcRadius
-                )
-                let sideQuat2 = simd_quatf(angle: .pi / 2, axis: [0, 1, 0])
-                cardRotation = sideQuat2 * offsetQuat * fanQuat * tiltQuat * baseRotation
-
-            case 3: // Top - fan opens toward table center
-                cardPosition = SIMD3(
-                    fanCenter.x - sin(arcAngle) * arcRadius,
-                    fanCenter.y + Float(cardIndex) * verticalOffset,
-                    fanCenter.z + cos(arcAngle) * arcRadius - arcRadius
-                )
-                let sideQuat3 = simd_quatf(angle: .pi, axis: [0, 1, 0])
-                cardRotation = sideQuat3 * offsetQuat * fanQuat * tiltQuat * baseRotation
-
-            case 4: // Right - fan opens toward table center
-                cardPosition = SIMD3(
-                    fanCenter.x - cos(arcAngle) * arcRadius + arcRadius,
-                    fanCenter.y + Float(cardIndex) * verticalOffset,
-                    fanCenter.z - sin(arcAngle) * arcRadius
-                )
-                let sideQuat4 = simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])
-                cardRotation = sideQuat4 * offsetQuat * fanQuat * tiltQuat * baseRotation
-
-            default:
-                cardPosition = fanCenter
-                cardRotation = offsetQuat * baseRotation
-            }
-
-            // Animate card to position (kinematic mode for smooth animation)
-            if var physicsBody = card.components[PhysicsBodyComponent.self] {
-                physicsBody.mode = .kinematic
-                card.components[PhysicsBodyComponent.self] = physicsBody
-            }
-
-            // Stagger the animation slightly
-            let delay = Double(cardIndex) * 0.05
-            try? await Task.sleep(for: .seconds(delay))
-
-            // Animate to final position using settings duration (with collision validation)
-            moveCardSafely(
-                card,
-                to: Transform(scale: [1, 1, 1], rotation: cardRotation, translation: cardPosition),
-                duration: settings.inHandsAnimationDuration,
-                timingFunction: .easeInOut
-            )
-        }
-    }
+    // Delegate to shared fan logic
+    await fanCardsInHands()
 }
 
 internal func dealSingleCard(_ card: Entity, toSide sideIndex: Int, delay: Double, randomSpread: Float = 0.015) async {

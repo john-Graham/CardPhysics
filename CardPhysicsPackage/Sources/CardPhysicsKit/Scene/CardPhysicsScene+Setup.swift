@@ -22,8 +22,8 @@ internal func createTable() {
 
     // --- 1. The Main Wood Board (Base) ---
     // Rectangular table (wider than deep) matching Euchre render
-    let tableWidth: Float = 1.4
-    let tableDepth: Float = 1.0
+    let tableWidth = TableGeometry.tableWidth
+    let tableDepth = TableGeometry.tableDepth
 
     let baseMesh = MeshResource.generateBox(
         width: tableWidth,
@@ -71,8 +71,8 @@ internal func createTable() {
     // --- 2. The Raised Lip/Frame (Edge) ---
     // Thicker rails for a more substantial furniture look
 
-    let railThickness: Float = 0.07
-    let railHeight: Float = 0.035
+    let railThickness = TableGeometry.railThickness
+    let railHeight = TableGeometry.railHeight
 
     // Top/Bottom Rails with collision
     let hRailMesh = MeshResource.generateBox(width: tableWidth, height: railHeight, depth: railThickness, cornerRadius: 0.005)

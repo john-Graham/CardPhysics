@@ -105,28 +105,31 @@ internal enum HandEntity3D {
         return handRoot
     }
 
-    /// Calculate the fan arc center position for a given side
+    /// Calculate the fan arc center position for a given side.
+    /// Positions are derived from TableGeometry constants so they stay in sync
+    /// with the actual table dimensions.
     /// - Parameter side: The player side (1-4)
     /// - Returns: Center position of the card fan arc
-    static func getFanCenterPosition(side: Int) -> SIMD3<Float> {
+    @MainActor static func getFanCenterPosition(side: Int) -> SIMD3<Float> {
+        let y: Float = 0.05 // Base Y — updateInHandsCardPositions computes dynamic Y
         switch side {
         case 1: // Bottom
-            return SIMD3(0, 0.05, 0.38)
+            return SIMD3(0, y, TableGeometry.innerMaxZ)
         case 2: // Left
-            return SIMD3(-0.58, 0.05, 0)
+            return SIMD3(TableGeometry.innerMinX, y, 0)
         case 3: // Top
-            return SIMD3(0, 0.05, -0.38)
+            return SIMD3(0, y, TableGeometry.innerMinZ)
         case 4: // Right
-            return SIMD3(0.58, 0.05, 0)
+            return SIMD3(TableGeometry.innerMaxX, y, 0)
         default:
-            return SIMD3(0, 0.05, 0)
+            return SIMD3(0, y, 0)
         }
     }
 
     /// Calculate hand position below the fan center
     /// - Parameter side: The player side (1-4)
     /// - Returns: Position for the hand entity
-    static func getHandPosition(side: Int) -> SIMD3<Float> {
+    @MainActor static func getHandPosition(side: Int) -> SIMD3<Float> {
         let fanCenter = getFanCenterPosition(side: side)
         // Position hand slightly below and closer to table
         switch side {
