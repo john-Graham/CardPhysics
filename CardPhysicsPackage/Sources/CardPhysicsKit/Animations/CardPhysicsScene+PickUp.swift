@@ -3,33 +3,19 @@ import RealityKit
 
 extension CardPhysicsScene {
 
-// MARK: - Safe Movement Wrapper
-
-/// Safely move a card to a target transform, validating against table collision
-private func moveCardSafely(
-    _ card: Entity,
-    to transform: Transform,
-    duration: TimeInterval = 0.3,
-    timingFunction: AnimationTimingFunction = .easeInOut
-) {
-    let curvature: Float = 0.0  // Cards in pickup are flat
-
-    let safeTransform = CollisionUtils.validateCardTransform(
-        transform,
-        cardWidth: CardEntity3D.cardWidth,
-        cardHeight: CardEntity3D.cardHeight,
-        cardDepth: CardEntity3D.cardDepth,
-        curvature: curvature,
-        scene: nil
-    )
-
-    card.move(to: safeTransform, relativeTo: nil, duration: duration, timingFunction: timingFunction)
-}
-
 // MARK: - Gather and Pick Up
 
 public func gatherAndPickUp(corner: GatherCorner) async {
     guard !cards.isEmpty else { return }
+
+    // If cards are in fan state, restore physics and flatten curvature
+    if cardsInFanState {
+        for card in cards {
+            restorePhysics(to: card, mode: .kinematic)
+            applyCardCurvature(card, curvature: 0)
+        }
+        cardsInFanState = false
+    }
 
     // Calculate corner position based on table dimensions
     // tableWidth=1.4, tableDepth=1.0, rail=0.07

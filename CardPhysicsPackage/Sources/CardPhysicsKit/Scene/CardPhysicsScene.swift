@@ -49,6 +49,7 @@ public struct CardPhysicsScene: View {
     @State internal var cardSideAssignments: [ObjectIdentifier: Int] = [:]
     @State internal var deckPosition = Entity()
     @State internal var handEntities: [Entity] = []
+    @State internal var cardsInFanState: Bool = false
     @State internal var lastRoomEnvironment: RoomEnvironment = .none
     @State internal var lastCustomRoomImageFilename: String = ""
     @State internal var lastRoomRotation: Double = 0.0
@@ -245,6 +246,8 @@ public struct CardPhysicsScene: View {
 
 
     public func resetCards() {
+        cardsInFanState = false
+
         // Remove all cards and recreate deck
         for card in cards {
             card.removeFromParent()

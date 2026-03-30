@@ -40,8 +40,7 @@ final class CardTextureGenerator {
             // Render the rank/suit overlay (transparent background with corner indices)
             let overlayImage = renderCardFace(card, style: faceStyle)
             // Composite: photo underneath, overlay on top
-            let composited = compositeOverlay(overlayImage, over: photoImage) ?? photoImage
-            let finalImage = applyRoundedCornerMask(to: composited) ?? composited
+            let finalImage = compositeOverlay(overlayImage, over: photoImage) ?? photoImage
             let texture = try? TextureResource(
                 image: finalImage,
                 options: .init(semantic: .color)
@@ -63,8 +62,7 @@ final class CardTextureGenerator {
 
         guard let cgImage = renderCardFace(card, style: style) else { return nil }
 
-        let grainedImage = compositePaperGrain(over: cgImage) ?? cgImage
-        let finalImage = applyRoundedCornerMask(to: grainedImage) ?? grainedImage
+        let finalImage = compositePaperGrain(over: cgImage) ?? cgImage
 
         let texture = try? TextureResource(
             image: finalImage,
@@ -86,10 +84,9 @@ final class CardTextureGenerator {
             if let cached = cache[key] {
                 return cached
             }
-            guard let filename, let cgImage = loadAndCropCustomImage(filename: filename) else {
+            guard let filename, let finalImage = loadAndCropCustomImage(filename: filename) else {
                 return renderStyledBackTexture(style: .classicMaroon)
             }
-            let finalImage = applyRoundedCornerMask(to: cgImage) ?? cgImage
             let texture = try? TextureResource(
                 image: finalImage,
                 options: .init(semantic: .color)
@@ -109,8 +106,7 @@ final class CardTextureGenerator {
             return cached
         }
 
-        guard let rawImage = renderCardBack(style: style) else { return nil }
-        let cgImage = applyRoundedCornerMask(to: rawImage) ?? rawImage
+        guard let cgImage = renderCardBack(style: style) else { return nil }
 
         let texture = try? TextureResource(
             image: cgImage,
@@ -141,8 +137,7 @@ final class CardTextureGenerator {
             return texture(for: card)
         }
 
-        let wornImage = compositeOverlay(wearOverlay, over: grainedImage) ?? grainedImage
-        let finalImage = applyRoundedCornerMask(to: wornImage) ?? wornImage
+        let finalImage = compositeOverlay(wearOverlay, over: grainedImage) ?? grainedImage
 
         let texture = try? TextureResource(
             image: finalImage,
@@ -165,6 +160,7 @@ final class CardTextureGenerator {
     private func renderCardFace(_ card: Card, style: CardFaceStyle) -> CGImage? {
         let view = CardView(card: card, isFaceUp: true, size: .large, faceStyle: style)
             .frame(width: renderWidth, height: renderHeight)
+            .background(Color.white)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 5.0
         return renderer.cgImage
@@ -174,6 +170,7 @@ final class CardTextureGenerator {
         let dummyCard = Card(suit: .spades, rank: .ace)
         let view = CardView(card: dummyCard, isFaceUp: false, size: .large, backStyle: style)
             .frame(width: renderWidth, height: renderHeight)
+            .background(Color.white)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 5.0
         return renderer.cgImage
@@ -232,31 +229,6 @@ final class CardTextureGenerator {
     }
 
     // MARK: - Image Processing
-
-    private func applyRoundedCornerMask(to image: CGImage) -> CGImage? {
-        let w = image.width
-        let h = image.height
-
-        guard let ctx = CGContext(
-            data: nil,
-            width: w,
-            height: h,
-            bitsPerComponent: 8,
-            bytesPerRow: w * 4,
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else { return nil }
-
-        let rect = CGRect(x: 0, y: 0, width: w, height: h)
-        let cornerRadius: CGFloat = 50.0
-        let path = CGPath(roundedRect: rect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil)
-
-        ctx.addPath(path)
-        ctx.clip()
-        ctx.draw(image, in: rect)
-
-        return ctx.makeImage()
-    }
 
     /// Composites a transparent overlay (rank/suit indicators) on top of a base image (custom photo)
     private func compositeOverlay(_ overlay: CGImage?, over baseImage: CGImage) -> CGImage? {
