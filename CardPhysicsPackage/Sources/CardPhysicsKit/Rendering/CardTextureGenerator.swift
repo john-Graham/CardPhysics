@@ -160,8 +160,9 @@ final class CardTextureGenerator {
     private func renderCardFace(_ card: Card, style: CardFaceStyle) -> CGImage? {
         let view = CardView(card: card, isFaceUp: true, size: .large, faceStyle: style)
             .frame(width: renderWidth, height: renderHeight)
-            .background(Color.white)
+            .background(Color.clear)
         let renderer = ImageRenderer(content: view)
+        renderer.isOpaque = false
         renderer.scale = 5.0
         return renderer.cgImage
     }
@@ -170,8 +171,9 @@ final class CardTextureGenerator {
         let dummyCard = Card(suit: .spades, rank: .ace)
         let view = CardView(card: dummyCard, isFaceUp: false, size: .large, backStyle: style)
             .frame(width: renderWidth, height: renderHeight)
-            .background(Color.white)
+            .background(Color.clear)
         let renderer = ImageRenderer(content: view)
+        renderer.isOpaque = false
         renderer.scale = 5.0
         return renderer.cgImage
     }

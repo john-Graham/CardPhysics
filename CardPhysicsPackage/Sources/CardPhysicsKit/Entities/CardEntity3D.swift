@@ -29,6 +29,7 @@ enum CardEntity3D {
             material.specular = .init(floatLiteral: 0.4)
             material.clearcoat = .init(floatLiteral: 0.8)
             material.clearcoatRoughness = .init(floatLiteral: 0.1)
+            material.blending = .transparent(opacity: .init(floatLiteral: 1.0))
             return material
         }
 
