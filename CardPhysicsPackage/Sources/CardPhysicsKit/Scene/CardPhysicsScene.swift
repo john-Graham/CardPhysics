@@ -64,6 +64,7 @@ public struct CardPhysicsScene: View {
     @State internal var activeBurstEntities: [Entity] = []
     @State internal var lastDustMotesEnabled: Bool = false
     @State internal var lastFeltDisturbanceEnabled: Bool = false
+    @State internal var lastGravityMultiplier: Float = GravityPreset.earth.multiplier
 
     public let settings: PhysicsSettings
     public let cameraPosition: SIMD3<Float>
@@ -84,8 +85,9 @@ public struct CardPhysicsScene: View {
 
             // Configure physics simulation with gravity
             var physicsSimulation = PhysicsSimulationComponent()
-            physicsSimulation.gravity = [0, -9.8, 0]  // Standard Earth gravity
+            physicsSimulation.gravity = [0, -(GravityPreset.earthGravity * settings.gravityMultiplier), 0]
             rootEntity.components.set(physicsSimulation)
+            lastGravityMultiplier = settings.gravityMultiplier
 
             // Create camera with seated view angle
             createCamera()
@@ -160,6 +162,15 @@ public struct CardPhysicsScene: View {
             if let cameraEntity = rootEntity.findEntity(named: "camera") {
                 cameraEntity.position = cameraPosition
                 cameraEntity.look(at: cameraTarget, from: cameraPosition, relativeTo: nil)
+            }
+
+            // Update gravity when the slider/preset changes
+            if abs(settings.gravityMultiplier - lastGravityMultiplier) > 0.0001 {
+                if var physicsSimulation = rootEntity.components[PhysicsSimulationComponent.self] {
+                    physicsSimulation.gravity = [0, -(GravityPreset.earthGravity * settings.gravityMultiplier), 0]
+                    rootEntity.components.set(physicsSimulation)
+                }
+                lastGravityMultiplier = settings.gravityMultiplier
             }
 
             // Update shadow light if settings changed

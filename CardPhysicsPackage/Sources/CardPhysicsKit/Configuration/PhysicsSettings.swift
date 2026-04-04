@@ -74,6 +74,34 @@ public final class PhysicsSettings {
     // MARK: - Interaction
     public var enableCardTapGesture: Bool = false
 
+    // MARK: - Feature Flags
+    public var enableGravityFeature: Bool = true
+    public var enablePlayerCameraPresets: Bool = true
+    public var enableOverheadCameraPreset: Bool = true
+
+    // MARK: - Physics Experimentation
+    public var gravityMultiplier: Float = GravityPreset.earth.multiplier
+    public var gravityPreset: GravityPreset = .earth
+
+    public var gravityMetersPerSecondSquared: Float {
+        get {
+            gravityMultiplier * GravityPreset.earthGravity
+        }
+        set {
+            let clamped = min(
+                max(newValue, GravityPreset.moon.metersPerSecondSquared),
+                GravityPreset.jupiter.metersPerSecondSquared
+            )
+            gravityMultiplier = clamped / GravityPreset.earthGravity
+            gravityPreset = .custom
+        }
+    }
+
+    public func applyGravityPreset(_ preset: GravityPreset) {
+        gravityPreset = preset
+        gravityMultiplier = preset.multiplier
+    }
+
     // MARK: - Table Theme
     public var tableTheme: TableThemeSettings = TableThemeSettings()
 

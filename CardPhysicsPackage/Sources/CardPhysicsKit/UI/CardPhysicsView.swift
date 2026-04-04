@@ -10,6 +10,7 @@ public struct CardPhysicsView: View {
     @State private var cameraPosition: SIMD3<Float> = [0, 0.55, 0.54]
     @State private var cameraTarget: SIMD3<Float> = [0, 0, 0]
     @State private var coordinator = SceneCoordinator()
+    @State private var cameraPresetTask: Task<Void, Never>?
     @State private var selectedDealMode: DealMode = .twelve
     @State private var selectedCorner: GatherCorner = .bottomLeft
 
@@ -142,6 +143,13 @@ public struct CardPhysicsView: View {
                                 panelState.showEnvironmentalEffects = true
                             }
 
+                            if settings.enableGravityFeature {
+                                Button("Gravity Settings") {
+                                    panelState.closeAll()
+                                    panelState.showGravitySettings = true
+                                }
+                            }
+
                             Button("Camera") {
                                 panelState.closeAll()
                                 panelState.showCameraSettings = true
@@ -153,6 +161,29 @@ public struct CardPhysicsView: View {
                                 settings.enableCardTapGesture.toggle()
                             }) {
                                 Label("Tap to Flip", systemImage: settings.enableCardTapGesture ? "checkmark" : "")
+                            }
+
+                            Menu("Feature Flags") {
+                                Button(action: {
+                                    settings.enableGravityFeature.toggle()
+                                    if !settings.enableGravityFeature {
+                                        panelState.showGravitySettings = false
+                                    }
+                                }) {
+                                    Label("Gravity Controls", systemImage: settings.enableGravityFeature ? "checkmark" : "")
+                                }
+
+                                Button(action: {
+                                    settings.enablePlayerCameraPresets.toggle()
+                                }) {
+                                    Label("Player Camera Presets", systemImage: settings.enablePlayerCameraPresets ? "checkmark" : "")
+                                }
+
+                                Button(action: {
+                                    settings.enableOverheadCameraPreset.toggle()
+                                }) {
+                                    Label("Overhead Camera Preset", systemImage: settings.enableOverheadCameraPreset ? "checkmark" : "")
+                                }
                             }
 
                             Divider()
@@ -179,7 +210,13 @@ public struct CardPhysicsView: View {
                     cameraPosition: $cameraPosition,
                     cameraTarget: $cameraTarget,
                     isPresented: $panelState.showCameraSettings,
+                    showPlayerPresets: settings.enablePlayerCameraPresets,
+                    showOverheadPreset: settings.enableOverheadCameraPreset,
+                    onPresetSelected: { preset in
+                        applyCameraPreset(preset)
+                    },
                     onReset: {
+                        cameraPresetTask?.cancel()
                         cameraPosition = [0, 0.55, 0.54]
                         cameraTarget = [0, 0, 0]
                         resetScene()
@@ -273,6 +310,15 @@ public struct CardPhysicsView: View {
                 )
                 .transition(.move(edge: .trailing))
             }
+
+            // Gravity Settings Panel
+            if panelState.showGravitySettings && settings.enableGravityFeature {
+                GravitySettingsPanel(
+                    settings: settings,
+                    isPresented: $panelState.showGravitySettings
+                )
+                .transition(.move(edge: .trailing))
+            }
         }
         .animation(.easeInOut, value: panelState.showDealSettings)
         .animation(.easeInOut, value: panelState.showPickUpSettings)
@@ -284,6 +330,7 @@ public struct CardPhysicsView: View {
         .animation(.easeInOut, value: panelState.showCardEffects)
         .animation(.easeInOut, value: panelState.showEnvironmentalEffects)
         .animation(.easeInOut, value: panelState.showCameraSettings)
+        .animation(.easeInOut, value: panelState.showGravitySettings)
         .persistentSystemOverlays(.hidden)
     }
 
@@ -302,7 +349,25 @@ public struct CardPhysicsView: View {
         }
     }
 
+    private func applyCameraPreset(_ preset: CameraPreset) {
+        cameraPresetTask?.cancel()
+        let startPosition = cameraPosition
+        let startTarget = cameraTarget
+        cameraPresetTask = Task {
+            await CameraPresetAnimator.animate(
+                fromPosition: startPosition,
+                fromTarget: startTarget,
+                toPosition: preset.position,
+                toTarget: preset.target
+            ) { newPosition, newTarget in
+                cameraPosition = newPosition
+                cameraTarget = newTarget
+            }
+        }
+    }
+
     private func resetScene() {
+        cameraPresetTask?.cancel()
         sceneKey = UUID()
         coordinator = SceneCoordinator()
     }

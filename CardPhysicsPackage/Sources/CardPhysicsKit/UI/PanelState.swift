@@ -17,6 +17,7 @@ final class PanelState {
     var showCardEffects = false
     var showEnvironmentalEffects = false
     var showCameraSettings = false
+    var showGravitySettings = false
 
     /// Dismisses every panel.
     func closeAll() {
@@ -30,5 +31,6 @@ final class PanelState {
         showCardEffects = false
         showEnvironmentalEffects = false
         showCameraSettings = false
+        showGravitySettings = false
     }
 }

@@ -4,6 +4,9 @@ struct CameraControlPanel: View {
     @Binding var cameraPosition: SIMD3<Float>
     @Binding var cameraTarget: SIMD3<Float>
     @Binding var isPresented: Bool
+    let showPlayerPresets: Bool
+    let showOverheadPreset: Bool
+    let onPresetSelected: (CameraPreset) -> Void
     let onReset: () -> Void
 
     var body: some View {
@@ -28,6 +31,57 @@ struct CameraControlPanel: View {
                     }
 
                     Divider()
+
+                    if showPlayerPresets || showOverheadPreset {
+                        Text("Presets")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+
+                        if showPlayerPresets {
+                            LazyVGrid(
+                                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                                spacing: 8
+                            ) {
+                                ForEach(CameraPreset.playerSides, id: \.self) { preset in
+                                    Button(action: {
+                                        onPresetSelected(preset)
+                                    }) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: preset.icon)
+                                                .font(.caption2)
+                                            Text(preset.rawValue)
+                                                .font(.caption)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 6)
+                                        .foregroundColor(.white)
+                                        .glassEffect(.regular.tint(Color.gray.opacity(0.35)).interactive(), in: .rect(cornerRadius: 6))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        if showOverheadPreset {
+                            Button(action: {
+                                onPresetSelected(.overhead)
+                            }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: CameraPreset.overhead.icon)
+                                        .font(.caption2)
+                                    Text(CameraPreset.overhead.rawValue)
+                                        .font(.caption)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .foregroundColor(.white)
+                                .glassEffect(.regular.tint(Color.gray.opacity(0.35)).interactive(), in: .rect(cornerRadius: 6))
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        Divider()
+                    }
 
                     // Camera Position
                     Text("Position")
