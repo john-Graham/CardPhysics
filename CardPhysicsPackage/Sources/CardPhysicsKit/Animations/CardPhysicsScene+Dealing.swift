@@ -108,29 +108,24 @@ internal func dealSingleCard(_ card: Entity, toSide sideIndex: Int, delay: Doubl
     let randomX = Float.random(in: -randomSpread...randomSpread)
     let randomZ = Float.random(in: -randomSpread...randomSpread)
 
-    let targetX: Float
-    let targetZ: Float
+    var targetTransform = Transform(
+        rotation: TableGeometry.cardRotation(for: sideIndex),
+        translation: TableGeometry.cardCenter(for: sideIndex)
+    )
+    targetTransform.translation.x += randomX
+    targetTransform.translation.z += randomZ
 
-    switch sideIndex {
-    case 1:
-        targetX = 0.0 + randomX
-        targetZ = 0.35 + randomZ
-    case 2:
-        targetX = -0.55 + randomX
-        targetZ = 0.0 + randomZ
-    case 3:
-        targetX = 0.0 + randomX
-        targetZ = -0.35 + randomZ
-    case 4:
-        targetX = 0.55 + randomX
-        targetZ = 0.0 + randomZ
-    default:
-        targetX = 0
-        targetZ = 0
-    }
+    let safeTarget = CollisionUtils.validateCardTransform(
+        targetTransform,
+        cardWidth: CardEntity3D.cardWidth,
+        cardHeight: CardEntity3D.cardHeight,
+        cardDepth: CardEntity3D.cardDepth,
+        curvature: 0.0,
+        clampToBounds: true
+    )
 
     let startPos = card.position
-    let targetPos = SIMD3<Float>(targetX, 0.008, targetZ)
+    let targetPos = safeTarget.translation
     let horizontalDirection = SIMD3<Float>(
         targetPos.x - startPos.x,
         0,
@@ -201,25 +196,9 @@ internal func stackCardsBySide() async {
         sideCards[side, default: []].append(card)
     }
 
-    // Stack center positions for each side
-    let sidePositions: [Int: SIMD3<Float>] = [
-        1: [0, 0.008, 0.35],
-        2: [-0.55, 0.008, 0],
-        3: [0, 0.008, -0.35],
-        4: [0.55, 0.008, 0]
-    ]
-
-    // Y-axis rotation so cards face their player (face-down, backs visible)
-    let sideRotations: [Int: simd_quatf] = [
-        1: simd_quatf(angle: 0, axis: [1, 0, 0]),                                                           // face-down, backs up
-        2: simd_quatf(angle: .pi / 2, axis: [0, 1, 0]),                                                     // face-down, rotated to face left
-        3: simd_quatf(angle: .pi, axis: [0, 1, 0]),                                                         // face-down, rotated to face top
-        4: simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])                                                     // face-down, rotated to face right
-    ]
-
     for (side, cardsInSide) in sideCards {
-        guard let basePos = sidePositions[side],
-              let rotation = sideRotations[side] else { continue }
+        let basePos = TableGeometry.cardCenter(for: side)
+        let rotation = TableGeometry.cardRotation(for: side)
 
         for (index, card) in cardsInSide.enumerated() {
             // Switch to kinematic for scripted animation
@@ -240,7 +219,8 @@ internal func stackCardsBySide() async {
                     translation: target
                 ),
                 duration: 0.4,
-                timingFunction: .easeInOut
+                timingFunction: .easeInOut,
+                clampToBounds: true
             )
         }
     }
