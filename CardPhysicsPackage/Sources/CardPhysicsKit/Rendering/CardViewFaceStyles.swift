@@ -4,290 +4,182 @@ import SwiftUI
 
 extension CardView {
 
-    // MARK: Classic Face (original design)
+    // MARK: Standard Poker
 
-    var classicFront: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size.cornerRadius)
-                .fill(Color(red: 0.97, green: 0.95, blue: 0.91))
-
-            RoundedRectangle(cornerRadius: size.cornerRadius)
-                .strokeBorder(
-                    Color(red: 0.75, green: 0.72, blue: 0.68, opacity: 0.5),
-                    lineWidth: 1.5
-                )
-
-            pipLayout
-            .foregroundColor(suitColor)
-            .frame(width: size.width * 0.50, height: size.height * 0.54)
-            .clipped()
-
-            // Corner indices: top-left
-            VStack(spacing: -2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.38, weight: .bold, design: .serif))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.38))
-            }
-            .foregroundColor(suitColor)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.leading, size.width * 0.07)
-            .padding(.top, size.height * 0.035)
-
-            // Corner indices: bottom-right (rotated 180)
-            VStack(spacing: -2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.38, weight: .bold, design: .serif))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.38))
-            }
-            .foregroundColor(suitColor)
-            .rotationEffect(.degrees(180))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.trailing, size.width * 0.07)
-            .padding(.bottom, size.height * 0.035)
-        }
-    }
-
-    // MARK: Modern Face
-
-    var modernFront: some View {
+    var standardPokerFront: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size.cornerRadius)
                 .fill(Color.white)
 
-            // Thin border
             RoundedRectangle(cornerRadius: size.cornerRadius)
-                .strokeBorder(suitColor.opacity(0.3), lineWidth: 1)
+                .strokeBorder(Color(red: 0.82, green: 0.82, blue: 0.80), lineWidth: 1)
 
-            // Large centered pip
-            Text(card.suit.rawValue)
-                .font(.system(size: size.fontSize * 2.0))
-                .foregroundColor(suitColor)
-
-            // Rank above the pip
-            Text(card.rank.symbol)
-                .font(.system(size: size.fontSize * 0.9, weight: .semibold, design: .rounded))
-                .foregroundColor(suitColor)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.leading, size.width * 0.10)
-                .padding(.top, size.height * 0.04)
-
-            // Bottom-right rank (rotated 180)
-            Text(card.rank.symbol)
-                .font(.system(size: size.fontSize * 0.9, weight: .semibold, design: .rounded))
-                .foregroundColor(suitColor)
-                .rotationEffect(.degrees(180))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .padding(.trailing, size.width * 0.10)
-                .padding(.bottom, size.height * 0.04)
-        }
-    }
-
-    // MARK: Minimal Face
-
-    var minimalFront: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size.cornerRadius)
-                .fill(Color(red: 0.98, green: 0.98, blue: 0.97))
-
-            // Single large rank + suit centered, no corner indices
-            VStack(spacing: 0) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 1.8, weight: .light))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 1.4))
-            }
-            .foregroundColor(suitColor)
-        }
-    }
-
-    // MARK: Custom Image Overlay (rank/suit on transparent background, composited over photo)
-
-    var customImageOverlay: some View {
-        ZStack {
-            // Transparent background -- the photo is drawn underneath at the texture level
-            Color.clear
-
-            // Corner indices: top-left with pill background for legibility
-            VStack(spacing: -2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.5, weight: .bold))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.5))
-            }
-            .foregroundColor(.white)
-            .shadow(color: .black.opacity(0.9), radius: 2, x: 0, y: 1)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.black.opacity(0.45))
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.leading, size.width * 0.06)
-            .padding(.top, size.height * 0.03)
-
-            // Corner indices: bottom-right (rotated 180)
-            VStack(spacing: -2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.5, weight: .bold))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.5))
-            }
-            .foregroundColor(.white)
-            .shadow(color: .black.opacity(0.9), radius: 2, x: 0, y: 1)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.black.opacity(0.45))
-            )
-            .rotationEffect(.degrees(180))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.trailing, size.width * 0.06)
-            .padding(.bottom, size.height * 0.03)
-        }
-    }
-
-    // MARK: Bold Face
-
-    var boldFront: some View {
-        let bgColor: Color = card.suit.color == .red
-            ? Color(red: 0.85, green: 0.10, blue: 0.10)
-            : Color(red: 0.12, green: 0.12, blue: 0.18)
-
-        return ZStack {
-            RoundedRectangle(cornerRadius: size.cornerRadius)
-                .fill(bgColor)
-
-            // Thick white border
-            RoundedRectangle(cornerRadius: size.cornerRadius)
-                .strokeBorder(Color.white.opacity(0.8), lineWidth: 2.5)
-
-            VStack(spacing: 2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 1.3, weight: .black))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 1.5))
-            }
-            .foregroundColor(.white)
-
-            // Corner indices: top-left
-            VStack(spacing: -2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.45, weight: .bold))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.45))
-            }
-            .foregroundColor(.white.opacity(0.9))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.leading, size.width * 0.08)
-            .padding(.top, size.height * 0.04)
-
-            // Corner indices: bottom-right
-            VStack(spacing: -2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.45, weight: .bold))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.45))
-            }
-            .foregroundColor(.white.opacity(0.9))
-            .rotationEffect(.degrees(180))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.trailing, size.width * 0.08)
-            .padding(.bottom, size.height * 0.04)
-        }
-    }
-
-    // MARK: Bicycle/Poker Style (Traditional US playing cards)
-
-    var bicycleFront: some View {
-        ZStack {
-            // Pure white background like real playing cards
-            RoundedRectangle(cornerRadius: size.cornerRadius)
-                .fill(Color.white)
-
-            // Subtle border
-            RoundedRectangle(cornerRadius: size.cornerRadius)
-                .strokeBorder(
-                    Color(red: 0.85, green: 0.85, blue: 0.85),
-                    lineWidth: 1
-                )
-
-            // Traditional pip layout in center
             pipLayout
                 .foregroundColor(suitColor)
                 .frame(width: size.width * 0.50, height: size.height * 0.54)
                 .clipped()
 
-            // Corner indices: top-left
-            VStack(spacing: -3) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.5, weight: .bold, design: .serif))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.5))
-            }
-            .foregroundColor(suitColor)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.leading, size.width * 0.06)
-            .padding(.top, size.height * 0.03)
+            cornerIndex(fontScale: 0.50, weight: .bold, design: .serif)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.leading, size.width * 0.06)
+                .padding(.top, size.height * 0.03)
 
-            // Corner indices: bottom-right (rotated 180)
-            VStack(spacing: -3) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.5, weight: .bold, design: .serif))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.5))
-            }
-            .foregroundColor(suitColor)
-            .rotationEffect(.degrees(180))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.trailing, size.width * 0.06)
-            .padding(.bottom, size.height * 0.03)
+            cornerIndex(fontScale: 0.50, weight: .bold, design: .serif)
+                .rotationEffect(.degrees(180))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .padding(.trailing, size.width * 0.06)
+                .padding(.bottom, size.height * 0.03)
         }
     }
 
-    // MARK: French Style (Classic European playing cards)
+    // MARK: Jumbo Index
 
-    var frenchFront: some View {
+    var jumboIndexFront: some View {
         ZStack {
-            // Slightly off-white/ivory background
             RoundedRectangle(cornerRadius: size.cornerRadius)
-                .fill(Color(red: 0.99, green: 0.98, blue: 0.96))
+                .fill(Color.white)
 
-            // Delicate border
             RoundedRectangle(cornerRadius: size.cornerRadius)
-                .strokeBorder(suitColor.opacity(0.2), lineWidth: 1.5)
+                .strokeBorder(Color(red: 0.74, green: 0.74, blue: 0.72), lineWidth: 1.25)
 
-            // Center pip layout (French cards are more minimalist)
-            pipLayoutFrench
-                .foregroundColor(suitColor)
+            Text(card.suit.rawValue)
+                .font(.system(size: size.fontSize * 1.35, weight: .regular))
+                .foregroundColor(suitColor.opacity(0.95))
 
-            // Corner indices with French-style serif font
-            VStack(spacing: -2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.48, weight: .semibold, design: .serif))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.42))
-            }
-            .foregroundColor(suitColor)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.leading, size.width * 0.07)
-            .padding(.top, size.height * 0.035)
+            jumboCornerIndex
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.leading, size.width * 0.08)
+                .padding(.top, size.height * 0.035)
 
-            // Bottom-right corner
-            VStack(spacing: -2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.48, weight: .semibold, design: .serif))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.42))
-            }
-            .foregroundColor(suitColor)
-            .rotationEffect(.degrees(180))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.trailing, size.width * 0.07)
-            .padding(.bottom, size.height * 0.035)
+            jumboCornerIndex
+                .rotationEffect(.degrees(180))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .padding(.trailing, size.width * 0.08)
+                .padding(.bottom, size.height * 0.035)
         }
+    }
+
+    // MARK: Casino Diamond
+
+    var casinoDiamondFront: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size.cornerRadius)
+                .fill(Color.white)
+
+            casinoDiamondFacePattern
+                .clipShape(RoundedRectangle(cornerRadius: size.cornerRadius * 0.65))
+                .padding(size.width * 0.08)
+
+            RoundedRectangle(cornerRadius: size.cornerRadius)
+                .strokeBorder(Color(red: 0.72, green: 0.72, blue: 0.70), lineWidth: 1)
+
+            RoundedRectangle(cornerRadius: size.cornerRadius * 0.72)
+                .strokeBorder(suitColor.opacity(0.28), lineWidth: 1)
+                .padding(size.width * 0.06)
+
+            pipLayout
+                .foregroundColor(suitColor)
+                .frame(width: size.width * 0.46, height: size.height * 0.50)
+                .clipped()
+
+            cornerIndex(fontScale: 0.52, weight: .black, design: .default)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.leading, size.width * 0.065)
+                .padding(.top, size.height * 0.03)
+
+            cornerIndex(fontScale: 0.52, weight: .black, design: .default)
+                .rotationEffect(.degrees(180))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .padding(.trailing, size.width * 0.065)
+                .padding(.bottom, size.height * 0.03)
+        }
+    }
+
+    // MARK: Custom Image Overlay
+
+    var customImageOverlay: some View {
+        ZStack {
+            Color.clear
+
+            customImageCornerIndex
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.leading, size.width * 0.06)
+                .padding(.top, size.height * 0.03)
+
+            customImageCornerIndex
+                .rotationEffect(.degrees(180))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .padding(.trailing, size.width * 0.06)
+                .padding(.bottom, size.height * 0.03)
+        }
+    }
+
+    // MARK: Shared Parts
+
+    private func cornerIndex(
+        fontScale: CGFloat,
+        weight: Font.Weight,
+        design: Font.Design
+    ) -> some View {
+        VStack(spacing: -3) {
+            Text(card.rank.symbol)
+                .font(.system(size: size.fontSize * fontScale, weight: weight, design: design))
+            Text(card.suit.rawValue)
+                .font(.system(size: size.fontSize * fontScale))
+        }
+        .foregroundColor(suitColor)
+    }
+
+    private var jumboCornerIndex: some View {
+        VStack(spacing: -3) {
+            Text(card.rank.symbol)
+                .font(.system(size: size.fontSize * 0.82, weight: .black, design: .rounded))
+            Text(card.suit.rawValue)
+                .font(.system(size: size.fontSize * 0.70, weight: .semibold))
+        }
+        .foregroundColor(suitColor)
+    }
+
+    private var customImageCornerIndex: some View {
+        VStack(spacing: -2) {
+            Text(card.rank.symbol)
+                .font(.system(size: size.fontSize * 0.5, weight: .bold))
+            Text(card.suit.rawValue)
+                .font(.system(size: size.fontSize * 0.5))
+        }
+        .foregroundColor(.white)
+        .shadow(color: .black.opacity(0.9), radius: 2, x: 0, y: 1)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.black.opacity(0.45))
+        )
+    }
+
+    private var casinoDiamondFacePattern: some View {
+        VStack(spacing: size.width * 0.06) {
+            ForEach(0..<8, id: \.self) { row in
+                HStack(spacing: size.width * 0.06) {
+                    ForEach(0..<4, id: \.self) { col in
+                        Diamond()
+                            .fill(((row + col) % 2 == 0 ? suitColor : Color.gray).opacity(0.055))
+                            .frame(width: size.width * 0.09, height: size.width * 0.09)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct Diamond: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.midY))
+        path.closeSubpath()
+        return path
     }
 }

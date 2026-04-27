@@ -2,23 +2,17 @@ import Foundation
 import SwiftUI
 
 public enum CardFaceStyle: String, CaseIterable, Codable, Sendable {
-    case classic
-    case modern
-    case minimal
-    case bold
-    case bicycle
-    case french
+    case standardPoker
+    case jumboIndex
+    case casinoDiamond
     case customImage
     case selfie
 
     public var displayName: String {
         switch self {
-        case .classic: "Classic"
-        case .modern: "Modern"
-        case .minimal: "Minimal"
-        case .bold: "Bold"
-        case .bicycle: "Bicycle"
-        case .french: "French"
+        case .standardPoker: "Standard Poker"
+        case .jumboIndex: "Jumbo Index"
+        case .casinoDiamond: "Casino Diamond"
         case .customImage: "Photo"
         case .selfie: "Selfie"
         }
@@ -26,12 +20,9 @@ public enum CardFaceStyle: String, CaseIterable, Codable, Sendable {
 
     public var icon: String {
         switch self {
-        case .classic: "rectangle.portrait"
-        case .modern: "rectangle.portrait.fill"
-        case .minimal: "square"
-        case .bold: "rectangle.portrait.inset.filled"
-        case .bicycle: "suit.club.fill"
-        case .french: "suit.spade.fill"
+        case .standardPoker: "suit.heart.fill"
+        case .jumboIndex: "textformat.size.larger"
+        case .casinoDiamond: "diamond.fill"
         case .customImage: "photo"
         case .selfie: "camera"
         }
@@ -39,30 +30,22 @@ public enum CardFaceStyle: String, CaseIterable, Codable, Sendable {
 
     /// Styles that appear in the preset picker (not photo/selfie)
     public static var presets: [CardFaceStyle] {
-        [.classic, .modern, .minimal, .bold, .bicycle, .french]
+        [.standardPoker, .jumboIndex, .casinoDiamond]
     }
 }
 
 public enum CardBackStyle: String, CaseIterable, Codable, Sendable {
-    case classicMaroon
-    case royalBlue
-    case forestGreen
-    case midnight
-    case bicycleRed
-    case bicycleBlue
-    case french
+    case standardPoker
+    case jumboIndex
+    case casinoDiamond
     case customImage
     case selfie
 
     public var displayName: String {
         switch self {
-        case .classicMaroon: "Maroon"
-        case .royalBlue: "Royal Blue"
-        case .forestGreen: "Forest Green"
-        case .midnight: "Midnight"
-        case .bicycleRed: "Bicycle Red"
-        case .bicycleBlue: "Bicycle Blue"
-        case .french: "French"
+        case .standardPoker: "Standard Poker"
+        case .jumboIndex: "Jumbo Index"
+        case .casinoDiamond: "Casino Diamond"
         case .customImage: "Photo"
         case .selfie: "Selfie"
         }
@@ -70,46 +53,26 @@ public enum CardBackStyle: String, CaseIterable, Codable, Sendable {
 
     public var gradientColors: (primary: Color, secondary: Color) {
         switch self {
-        case .classicMaroon:
+        case .standardPoker:
             (
-                Color(red: 0.55, green: 0.08, blue: 0.10),
-                Color(red: 0.40, green: 0.05, blue: 0.08)
+                Color(red: 0.70, green: 0.05, blue: 0.08),
+                Color(red: 0.48, green: 0.02, blue: 0.05)
             )
-        case .royalBlue:
+        case .jumboIndex:
             (
                 Color(red: 0.10, green: 0.15, blue: 0.55),
                 Color(red: 0.06, green: 0.08, blue: 0.40)
             )
-        case .forestGreen:
+        case .casinoDiamond:
             (
-                Color(red: 0.08, green: 0.40, blue: 0.15),
-                Color(red: 0.05, green: 0.28, blue: 0.10)
-            )
-        case .midnight:
-            (
-                Color(red: 0.10, green: 0.10, blue: 0.20),
-                Color(red: 0.05, green: 0.05, blue: 0.12)
-            )
-        case .bicycleRed:
-            (
-                Color(red: 0.80, green: 0.12, blue: 0.15),
-                Color(red: 0.65, green: 0.08, blue: 0.10)
-            )
-        case .bicycleBlue:
-            (
-                Color(red: 0.12, green: 0.25, blue: 0.70),
-                Color(red: 0.08, green: 0.15, blue: 0.55)
-            )
-        case .french:
-            (
-                Color(red: 0.15, green: 0.30, blue: 0.60),
-                Color(red: 0.10, green: 0.20, blue: 0.45)
+                Color(red: 0.82, green: 0.05, blue: 0.07),
+                Color(red: 0.58, green: 0.02, blue: 0.04)
             )
         case .customImage, .selfie:
             // Fallback gradient for custom/selfie (not used when image is loaded)
             (
-                Color(red: 0.55, green: 0.08, blue: 0.10),
-                Color(red: 0.40, green: 0.05, blue: 0.08)
+                Color(red: 0.70, green: 0.05, blue: 0.08),
+                Color(red: 0.48, green: 0.02, blue: 0.05)
             )
         }
     }
@@ -120,15 +83,15 @@ public enum CardBackStyle: String, CaseIterable, Codable, Sendable {
 
     /// Styles that appear in the preset picker (not photo/selfie)
     public static var presets: [CardBackStyle] {
-        [.classicMaroon, .royalBlue, .forestGreen, .midnight, .bicycleRed, .bicycleBlue, .french]
+        [.standardPoker, .jumboIndex, .casinoDiamond]
     }
 }
 
 @Observable
 @MainActor
 public final class CardDesignConfiguration {
-    public var faceStyle: CardFaceStyle = .classic
-    public var backStyle: CardBackStyle = .classicMaroon
+    public var faceStyle: CardFaceStyle = .standardPoker
+    public var backStyle: CardBackStyle = .standardPoker
 
     public var customFaceImageFilename: String?
     public var customBackImageFilename: String?

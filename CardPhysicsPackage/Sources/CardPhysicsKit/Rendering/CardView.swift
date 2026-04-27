@@ -6,8 +6,8 @@ public struct CardView: View {
     public var isHighlighted: Bool = false
     public var isPlayable: Bool = true
     public var size: CardSize = .medium
-    public var faceStyle: CardFaceStyle = .classic
-    public var backStyle: CardBackStyle = .classicMaroon
+    public var faceStyle: CardFaceStyle = .standardPoker
+    public var backStyle: CardBackStyle = .standardPoker
     public var castsShadow: Bool = true
 
     public init(
@@ -16,8 +16,8 @@ public struct CardView: View {
         isHighlighted: Bool = false,
         isPlayable: Bool = true,
         size: CardSize = .medium,
-        faceStyle: CardFaceStyle = .classic,
-        backStyle: CardBackStyle = .classicMaroon,
+        faceStyle: CardFaceStyle = .standardPoker,
+        backStyle: CardBackStyle = .standardPoker,
         castsShadow: Bool = true
     ) {
         self.card = card
@@ -90,18 +90,12 @@ public struct CardView: View {
     @ViewBuilder
     private var cardFront: some View {
         switch faceStyle {
-        case .classic:
-            classicFront
-        case .modern:
-            modernFront
-        case .minimal:
-            minimalFront
-        case .bold:
-            boldFront
-        case .bicycle:
-            bicycleFront
-        case .french:
-            frenchFront
+        case .standardPoker:
+            standardPokerFront
+        case .jumboIndex:
+            jumboIndexFront
+        case .casinoDiamond:
+            casinoDiamondFront
         case .customImage, .selfie:
             customImageOverlay
         }
@@ -112,12 +106,14 @@ public struct CardView: View {
     private var cardBack: some View {
         Group {
             switch backStyle {
-            case .bicycleRed, .bicycleBlue:
-                bicycleBack
-            case .french:
-                frenchBack
-            default:
-                classicBack
+            case .standardPoker:
+                standardPokerBack
+            case .jumboIndex:
+                jumboIndexBack
+            case .casinoDiamond:
+                casinoDiamondBack
+            case .customImage, .selfie:
+                standardPokerBack
             }
         }
     }

@@ -11,7 +11,16 @@
       "Bash(cp -a /tmp/CardPhysics_clone/CardPhysics /Users/johndgraham/_applications/CardPhysics/)",
       "Bash(cp -a /tmp/CardPhysics_clone/CardPhysicsApp /Users/johndgraham/_applications/CardPhysics/)",
       "Bash(grep -E \"\\\\.\\(md|swift|rtf|sh\\)$|xcodeproj\")",
-      "Bash(gh issue:*)"
+      "Bash(gh issue:*)",
+      "Bash(git diff:*)",
+      "Read(/tmp/**)",
+      "Bash(swift build:*)",
+      "Bash(xcodebuild -project CardPhysicsApp.xcodeproj -scheme CardPhysicsApp -destination 'generic/platform=iOS Simulator' build)",
+      "Read(/private/tmp/**)",
+      "Bash(find Sources -name \"*.swift\" -exec grep -l \"GravityPreset\\\\|CameraPreset\" {} \\\\;)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

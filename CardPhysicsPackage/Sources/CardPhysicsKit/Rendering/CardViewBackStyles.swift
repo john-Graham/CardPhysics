@@ -4,7 +4,7 @@ import SwiftUI
 
 extension CardView {
 
-    var classicBack: some View {
+    var standardPokerBack: some View {
         let colors = backStyle.gradientColors
 
         return ZStack {
@@ -17,27 +17,49 @@ extension CardView {
                     )
                 )
 
-            // Outer white border
             RoundedRectangle(cornerRadius: size.cornerRadius)
-                .strokeBorder(Color.white.opacity(0.7), lineWidth: 2)
+                .strokeBorder(Color.white.opacity(0.88), lineWidth: 2.5)
 
-            // Inner border rectangle -- classic card back pattern
-            RoundedRectangle(cornerRadius: size.cornerRadius * 0.6)
-                .strokeBorder(Color.white.opacity(0.35), lineWidth: 1)
-                .padding(size.width * 0.08)
+            RoundedRectangle(cornerRadius: size.cornerRadius * 0.70)
+                .strokeBorder(Color.white.opacity(0.72), lineWidth: 1.5)
+                .padding(size.width * 0.07)
 
-            // Diamond center icon
-            Image(systemName: "diamond.fill")
-                .font(.system(size: size.fontSize * 1.0))
-                .foregroundColor(.white.opacity(0.25))
+            RoundedRectangle(cornerRadius: size.cornerRadius * 0.52)
+                .strokeBorder(Color.white.opacity(0.32), lineWidth: 1)
+                .padding(size.width * 0.13)
+
+            VStack(spacing: size.height * 0.055) {
+                ornamentalRow
+
+                ZStack {
+                    Circle()
+                        .stroke(Color.white.opacity(0.48), lineWidth: 1.5)
+                        .frame(width: size.width * 0.42, height: size.width * 0.42)
+
+                    Circle()
+                        .stroke(Color.white.opacity(0.26), lineWidth: 1)
+                        .frame(width: size.width * 0.30, height: size.width * 0.30)
+
+                    Image(systemName: "diamond.fill")
+                        .font(.system(size: size.fontSize * 0.58))
+                        .foregroundColor(.white.opacity(0.34))
+                }
+
+                ornamentalRow
+                    .rotationEffect(.degrees(180))
+            }
+            .foregroundColor(.white.opacity(0.54))
+
+            cornerSparkles
+                .foregroundColor(.white.opacity(0.38))
+                .padding(size.width * 0.12)
         }
     }
 
-    var bicycleBack: some View {
+    var jumboIndexBack: some View {
         let colors = backStyle.gradientColors
 
         return ZStack {
-            // Base gradient
             RoundedRectangle(cornerRadius: size.cornerRadius)
                 .fill(
                     LinearGradient(
@@ -47,159 +69,126 @@ extension CardView {
                     )
                 )
 
-            // White border frame
             RoundedRectangle(cornerRadius: size.cornerRadius)
-                .strokeBorder(Color.white, lineWidth: 3)
+                .strokeBorder(Color.white.opacity(0.92), lineWidth: 3)
 
-            // Inner decorative border
-            RoundedRectangle(cornerRadius: size.cornerRadius * 0.7)
-                .strokeBorder(Color.white.opacity(0.8), lineWidth: 2)
-                .padding(size.width * 0.06)
+            RoundedRectangle(cornerRadius: size.cornerRadius * 0.75)
+                .strokeBorder(Color.white.opacity(0.55), lineWidth: 1.5)
+                .padding(size.width * 0.10)
 
-            // Central ornate pattern - Angel/Cherub inspired
-            VStack(spacing: size.height * 0.02) {
-                // Top ornamental cluster
-                HStack(spacing: size.width * 0.04) {
-                    Image(systemName: "circle.fill")
-                        .font(.system(size: size.fontSize * 0.3))
-                    Image(systemName: "diamond.fill")
-                        .font(.system(size: size.fontSize * 0.4))
-                    Image(systemName: "circle.fill")
-                        .font(.system(size: size.fontSize * 0.3))
-                }
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.56), lineWidth: 2)
+                    .frame(width: size.width * 0.46, height: size.width * 0.46)
 
-                // Center medallion with bicycle-style pattern
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.3))
-                        .frame(width: size.width * 0.35, height: size.width * 0.35)
+                Image(systemName: "suit.spade.fill")
+                    .font(.system(size: size.fontSize * 0.62, weight: .bold))
+                    .foregroundColor(.white.opacity(0.38))
+                    .offset(y: -size.height * 0.08)
 
-                    Circle()
-                        .stroke(Color.white.opacity(0.6), lineWidth: 2)
-                        .frame(width: size.width * 0.35, height: size.width * 0.35)
-
-                    // Inner decorative elements
-                    ForEach(0..<8, id: \.self) { i in
-                        Image(systemName: "suit.club.fill")
-                            .font(.system(size: size.fontSize * 0.25))
-                            .rotationEffect(.degrees(Double(i) * 45))
-                            .offset(y: -size.width * 0.12)
-                    }
-
-                    // Center circle
-                    Circle()
-                        .fill(Color.white.opacity(0.5))
-                        .frame(width: size.width * 0.12, height: size.width * 0.12)
-                }
-
-                // Bottom ornamental cluster
-                HStack(spacing: size.width * 0.04) {
-                    Image(systemName: "circle.fill")
-                        .font(.system(size: size.fontSize * 0.3))
-                    Image(systemName: "diamond.fill")
-                        .font(.system(size: size.fontSize * 0.4))
-                    Image(systemName: "circle.fill")
-                        .font(.system(size: size.fontSize * 0.3))
-                }
+                Image(systemName: "suit.spade.fill")
+                    .font(.system(size: size.fontSize * 0.62, weight: .bold))
+                    .foregroundColor(.white.opacity(0.38))
+                    .rotationEffect(.degrees(180))
+                    .offset(y: size.height * 0.08)
             }
-            .foregroundColor(.white.opacity(0.7))
 
-            // Corner flourishes
             VStack {
-                HStack {
-                    Image(systemName: "sparkle")
-                        .font(.system(size: size.fontSize * 0.4))
-                    Spacer()
-                    Image(systemName: "sparkle")
-                        .font(.system(size: size.fontSize * 0.4))
-                }
+                Rectangle()
+                    .fill(Color.white.opacity(0.30))
+                    .frame(width: size.width * 0.42, height: 1)
                 Spacer()
-                HStack {
-                    Image(systemName: "sparkle")
-                        .font(.system(size: size.fontSize * 0.4))
-                    Spacer()
-                    Image(systemName: "sparkle")
-                        .font(.system(size: size.fontSize * 0.4))
-                }
+                Rectangle()
+                    .fill(Color.white.opacity(0.30))
+                    .frame(width: size.width * 0.42, height: 1)
             }
-            .foregroundColor(.white.opacity(0.5))
-            .padding(size.width * 0.10)
+            .padding(.vertical, size.height * 0.23)
         }
     }
 
-    var frenchBack: some View {
+    var casinoDiamondBack: some View {
         let colors = backStyle.gradientColors
 
         return ZStack {
-            // Base color
             RoundedRectangle(cornerRadius: size.cornerRadius)
                 .fill(colors.primary)
 
-            // Elegant geometric pattern - French style
-            VStack(spacing: 0) {
-                ForEach(0..<5, id: \.self) { row in
-                    HStack(spacing: 0) {
-                        ForEach(0..<3, id: \.self) { col in
-                            Rectangle()
-                                .fill((row + col) % 2 == 0 ? Color.white.opacity(0.15) : Color.clear)
-                        }
-                    }
-                    .frame(height: size.height / 5)
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: size.cornerRadius * 0.8))
-            .padding(size.width * 0.08)
+            casinoDiamondBackPattern
+                .clipShape(RoundedRectangle(cornerRadius: size.cornerRadius * 0.75))
+                .padding(size.width * 0.05)
 
-            // Refined border
             RoundedRectangle(cornerRadius: size.cornerRadius)
-                .strokeBorder(Color.white.opacity(0.6), lineWidth: 2.5)
+                .strokeBorder(Color.white.opacity(0.82), lineWidth: 1.5)
 
-            // Inner decorative frame
-            RoundedRectangle(cornerRadius: size.cornerRadius * 0.6)
-                .strokeBorder(Color.white.opacity(0.4), lineWidth: 1.5)
+            RoundedRectangle(cornerRadius: size.cornerRadius * 0.70)
+                .strokeBorder(Color.white.opacity(0.38), lineWidth: 1)
                 .padding(size.width * 0.08)
 
-            // Center fleur-de-lis or spade motif
-            VStack(spacing: size.height * 0.1) {
-                Image(systemName: "suit.spade.fill")
-                    .font(.system(size: size.fontSize * 0.8))
-                    .foregroundColor(.white.opacity(0.4))
-
-                // Horizontal divider line
-                Rectangle()
-                    .fill(Color.white.opacity(0.3))
-                    .frame(width: size.width * 0.4, height: 1.5)
-
-                Image(systemName: "suit.spade.fill")
-                    .font(.system(size: size.fontSize * 0.8))
-                    .foregroundColor(.white.opacity(0.4))
-                    .rotationEffect(.degrees(180))
-            }
-
-            // Corner ornaments
-            VStack {
-                HStack {
-                    Image(systemName: "line.diagonal")
-                        .font(.system(size: size.fontSize * 0.3))
-                        .rotationEffect(.degrees(45))
-                    Spacer()
-                    Image(systemName: "line.diagonal")
-                        .font(.system(size: size.fontSize * 0.3))
-                        .rotationEffect(.degrees(-45))
-                }
-                Spacer()
-                HStack {
-                    Image(systemName: "line.diagonal")
-                        .font(.system(size: size.fontSize * 0.3))
-                        .rotationEffect(.degrees(-45))
-                    Spacer()
-                    Image(systemName: "line.diagonal")
-                        .font(.system(size: size.fontSize * 0.3))
-                        .rotationEffect(.degrees(45))
-                }
-            }
-            .foregroundColor(.white.opacity(0.35))
-            .padding(size.width * 0.10)
+            LinearGradient(
+                colors: [Color.white.opacity(0.12), colors.secondary.opacity(0.10)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .clipShape(RoundedRectangle(cornerRadius: size.cornerRadius))
         }
+    }
+
+    // MARK: Shared Parts
+
+    private var ornamentalRow: some View {
+        HStack(spacing: size.width * 0.05) {
+            Image(systemName: "circle.fill")
+                .font(.system(size: size.fontSize * 0.22))
+            Image(systemName: "diamond.fill")
+                .font(.system(size: size.fontSize * 0.34))
+            Image(systemName: "circle.fill")
+                .font(.system(size: size.fontSize * 0.22))
+        }
+    }
+
+    private var cornerSparkles: some View {
+        VStack {
+            HStack {
+                Image(systemName: "sparkle")
+                    .font(.system(size: size.fontSize * 0.36))
+                Spacer()
+                Image(systemName: "sparkle")
+                    .font(.system(size: size.fontSize * 0.36))
+            }
+            Spacer()
+            HStack {
+                Image(systemName: "sparkle")
+                    .font(.system(size: size.fontSize * 0.36))
+                Spacer()
+                Image(systemName: "sparkle")
+                    .font(.system(size: size.fontSize * 0.36))
+            }
+        }
+    }
+
+    private var casinoDiamondBackPattern: some View {
+        VStack(spacing: size.width * 0.02) {
+            ForEach(0..<13, id: \.self) { row in
+                HStack(spacing: size.width * 0.02) {
+                    ForEach(0..<7, id: \.self) { col in
+                        BackDiamond()
+                            .fill(((row + col) % 2 == 0 ? Color.white : Color.clear).opacity(0.30))
+                            .frame(width: size.width * 0.10, height: size.width * 0.10)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct BackDiamond: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.midY))
+        path.closeSubpath()
+        return path
     }
 }

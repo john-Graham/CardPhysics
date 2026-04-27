@@ -36,7 +36,7 @@ final class CardTextureGenerator {
                 return cached
             }
             guard let filename, let photoImage = loadAndCropCustomImage(filename: filename) else {
-                return renderStyledTexture(for: card, style: .classic)
+                return renderStyledTexture(for: card, style: .standardPoker)
             }
             // Render the rank/suit overlay (transparent background with corner indices)
             let overlayImage = renderCardFace(card, style: faceStyle)
@@ -88,7 +88,7 @@ final class CardTextureGenerator {
                 return cached
             }
             guard let filename, let loadedImage = loadAndCropCustomImage(filename: filename) else {
-                return renderStyledBackTexture(style: .classicMaroon)
+                return renderStyledBackTexture(style: .standardPoker)
             }
             let finalImage = roundedCardImage(loadedImage)
             let texture = try? TextureResource(
