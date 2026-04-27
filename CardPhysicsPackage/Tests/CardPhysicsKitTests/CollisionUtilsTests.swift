@@ -12,6 +12,30 @@ import RealityKit
     #expect(TableGeometry.innerMinZ == -TableGeometry.innerMaxZ)
 }
 
+@Test @MainActor func sideCardCentersLeaveMarginInsideRails() {
+    for side in 1...4 {
+        let transform = Transform(
+            rotation: TableGeometry.cardRotation(for: side),
+            translation: TableGeometry.cardCenter(for: side)
+        )
+
+        let (c0, c1, c2, c3) = CollisionUtils.cardCornerPositions(
+            transform: transform,
+            cardWidth: CardEntity3D.cardWidth,
+            cardDepth: CardEntity3D.cardDepth
+        )
+        let minX = min(min(c0.x, c1.x), min(c2.x, c3.x))
+        let maxX = max(max(c0.x, c1.x), max(c2.x, c3.x))
+        let minZ = min(min(c0.z, c1.z), min(c2.z, c3.z))
+        let maxZ = max(max(c0.z, c1.z), max(c2.z, c3.z))
+
+        #expect(minX >= TableGeometry.innerMinX)
+        #expect(maxX <= TableGeometry.innerMaxX)
+        #expect(minZ >= TableGeometry.innerMinZ)
+        #expect(maxZ <= TableGeometry.innerMaxZ)
+    }
+}
+
 // MARK: - Y Validation Tests
 
 @Test @MainActor func flatCardAtOriginIsRaisedAboveFelt() {
@@ -142,4 +166,43 @@ import RealityKit
         curvature: 0.0
     )
     #expect(safe.translation.x == transform.translation.x)
+}
+
+@Test @MainActor func worstCaseDealSpreadIsClampedInsideRails() {
+    let randomSpread: Float = 0.025
+
+    for side in 1...4 {
+        for offsetX in [-randomSpread, randomSpread] {
+            for offsetZ in [-randomSpread, randomSpread] {
+                let base = TableGeometry.cardCenter(for: side)
+                let transform = Transform(
+                    rotation: TableGeometry.cardRotation(for: side),
+                    translation: [base.x + offsetX, base.y, base.z + offsetZ]
+                )
+                let safe = CollisionUtils.validateCardTransform(
+                    transform,
+                    cardWidth: CardEntity3D.cardWidth,
+                    cardHeight: CardEntity3D.cardHeight,
+                    cardDepth: CardEntity3D.cardDepth,
+                    curvature: 0.0,
+                    clampToBounds: true
+                )
+
+                let (c0, c1, c2, c3) = CollisionUtils.cardCornerPositions(
+                    transform: safe,
+                    cardWidth: CardEntity3D.cardWidth,
+                    cardDepth: CardEntity3D.cardDepth
+                )
+                let minX = min(min(c0.x, c1.x), min(c2.x, c3.x))
+                let maxX = max(max(c0.x, c1.x), max(c2.x, c3.x))
+                let minZ = min(min(c0.z, c1.z), min(c2.z, c3.z))
+                let maxZ = max(max(c0.z, c1.z), max(c2.z, c3.z))
+
+                #expect(minX >= TableGeometry.innerMinX)
+                #expect(maxX <= TableGeometry.innerMaxX)
+                #expect(minZ >= TableGeometry.innerMinZ)
+                #expect(maxZ <= TableGeometry.innerMaxZ)
+            }
+        }
+    }
 }

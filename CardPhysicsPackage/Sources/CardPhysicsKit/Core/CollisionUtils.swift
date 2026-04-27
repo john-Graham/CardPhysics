@@ -8,6 +8,7 @@ enum TableGeometry {
     static let tableDepth: Float = 1.0
     static let railThickness: Float = 0.07
     static let railHeight: Float = 0.035
+    static let cardPlacementMargin: Float = 0.015
 
     /// Top of the felt box (5mm box centered at Y=0.0025)
     static let feltSurfaceY: Float = 0.005
@@ -17,6 +18,39 @@ enum TableGeometry {
     static let innerMaxX: Float = tableWidth / 2 - railThickness      //  0.63
     static let innerMinZ: Float = -(tableDepth / 2 - railThickness)   // -0.43
     static let innerMaxZ: Float = tableDepth / 2 - railThickness      //  0.43
+
+    static func cardCenter(for side: Int, y: Float = 0.008) -> SIMD3<Float> {
+        let xLimit = innerMaxX - CardEntity3D.cardDepth / 2 - cardPlacementMargin
+        let zLimit = innerMaxZ - CardEntity3D.cardDepth / 2 - cardPlacementMargin
+
+        switch side {
+        case 1:
+            return [0, y, zLimit]
+        case 2:
+            return [-xLimit, y, 0]
+        case 3:
+            return [0, y, -zLimit]
+        case 4:
+            return [xLimit, y, 0]
+        default:
+            return [0, y, 0]
+        }
+    }
+
+    static func cardRotation(for side: Int) -> simd_quatf {
+        switch side {
+        case 1:
+            return simd_quatf(angle: 0, axis: [1, 0, 0])
+        case 2:
+            return simd_quatf(angle: .pi / 2, axis: [0, 1, 0])
+        case 3:
+            return simd_quatf(angle: .pi, axis: [0, 1, 0])
+        case 4:
+            return simd_quatf(angle: -.pi / 2, axis: [0, 1, 0])
+        default:
+            return simd_quatf(angle: 0, axis: [1, 0, 0])
+        }
+    }
 }
 
 // MARK: - Collision Utilities
