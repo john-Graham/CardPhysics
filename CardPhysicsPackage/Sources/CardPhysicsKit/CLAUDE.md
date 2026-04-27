@@ -41,9 +41,9 @@ CardPhysicsKit/
 │   ├── CardPhysicsView.swift         # Main view wrapper (328 lines)
 │   ├── Components/                   # Reusable UI elements
 │   │   ├── AnimationButton.swift     # Async action button with glass effect
-│   │   ├── PresetButton.swift        # Settings preset button
-│   │   ├── SliderSetting.swift       # Labeled slider with value display
-│   └── RoomThumbnail.swift       # Environment selector thumbnail
+│   │   ├── SettingsPanelContainer.swift  # Shared header/scroll/glass chrome for panels
+│   │   ├── SliderSetting.swift       # Labeled slider + Float/axis/color-channel variants
+│   │   └── RoomThumbnail.swift       # Environment selector thumbnail
 │   └── Panels/                       # Settings panels (11 total)
 │       ├── CameraControlPanel.swift  # Camera position and target sliders
 │       ├── DealSettingsPanel.swift   # Deal animation parameters

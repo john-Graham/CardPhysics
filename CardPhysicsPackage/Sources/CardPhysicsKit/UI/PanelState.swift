@@ -1,5 +1,19 @@
 import Observation
 
+enum PanelKind: Hashable {
+    case dealSettings
+    case pickUpSettings
+    case inHandsSettings
+    case cardDesign
+    case roomBackground
+    case tableTheme
+    case lighting
+    case cardEffects
+    case environmentalEffects
+    case cameraSettings
+    case gravitySettings
+}
+
 /// Consolidates all panel visibility state for CardPhysicsView.
 ///
 /// Using `@Observable` allows SwiftUI to track individual property access,
@@ -7,30 +21,23 @@ import Observation
 @MainActor
 @Observable
 final class PanelState {
-    var showDealSettings = false
-    var showPickUpSettings = false
-    var showInHandsSettings = false
-    var showCardDesign = false
-    var showRoomBackground = false
-    var showTableTheme = false
-    var showLighting = false
-    var showCardEffects = false
-    var showEnvironmentalEffects = false
-    var showCameraSettings = false
-    var showGravitySettings = false
+    var activePanel: PanelKind?
 
-    /// Dismisses every panel.
-    func closeAll() {
-        showDealSettings = false
-        showPickUpSettings = false
-        showInHandsSettings = false
-        showCardDesign = false
-        showRoomBackground = false
-        showTableTheme = false
-        showLighting = false
-        showCardEffects = false
-        showEnvironmentalEffects = false
-        showCameraSettings = false
-        showGravitySettings = false
+    func show(_ panel: PanelKind) {
+        activePanel = panel
+    }
+
+    func close() {
+        activePanel = nil
+    }
+
+    func closeIfShowing(_ panel: PanelKind) {
+        if activePanel == panel {
+            close()
+        }
+    }
+
+    func isShowing(_ panel: PanelKind) -> Bool {
+        activePanel == panel
     }
 }

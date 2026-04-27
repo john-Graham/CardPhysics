@@ -7,24 +7,24 @@ extension CardView {
     // MARK: Bicycle-style pip layout
 
     var pipLayout: some View {
-        let pipSize = size.fontSize * 0.85
-        let spacing = size.height * 0.15
+        let pipSize = size.fontSize * 0.48
+        let spacing = size.height * 0.09
 
         return Group {
             switch card.rank.rawValue {
             case 9:
                 // 9: Classic 3x3 grid with center missing
                 VStack(spacing: spacing) {
-                    HStack(spacing: size.width * 0.25) {
+                    HStack(spacing: size.width * 0.18) {
                         pip(size: pipSize)
                         pip(size: pipSize)
                     }
-                    HStack(spacing: size.width * 0.25) {
+                    HStack(spacing: size.width * 0.18) {
                         pip(size: pipSize)
                         pip(size: pipSize)
                     }
                     pip(size: pipSize)
-                    HStack(spacing: size.width * 0.25) {
+                    HStack(spacing: size.width * 0.18) {
                         pip(size: pipSize)
                         pip(size: pipSize)
                     }
@@ -33,17 +33,17 @@ extension CardView {
             case 10:
                 // 10: Two columns with center pip
                 VStack(spacing: spacing * 0.7) {
-                    HStack(spacing: size.width * 0.25) {
+                    HStack(spacing: size.width * 0.18) {
                         pip(size: pipSize)
                         pip(size: pipSize)
                     }
                     pip(size: pipSize)
-                    HStack(spacing: size.width * 0.25) {
+                    HStack(spacing: size.width * 0.18) {
                         pip(size: pipSize)
                         pip(size: pipSize)
                     }
                     pip(size: pipSize, flipped: true)
-                    HStack(spacing: size.width * 0.25) {
+                    HStack(spacing: size.width * 0.18) {
                         pip(size: pipSize, flipped: true)
                         pip(size: pipSize, flipped: true)
                     }
@@ -51,24 +51,24 @@ extension CardView {
 
             case 11, 12, 13:
                 // Jack, Queen, King: Letter only (no actual court card artwork)
-                VStack(spacing: 4) {
+                VStack(spacing: 2) {
                     Text(card.rank.symbol)
-                        .font(.system(size: size.fontSize * 2.2, weight: .bold, design: .serif))
+                        .font(.system(size: size.fontSize * 1.05, weight: .bold, design: .serif))
                     Text(card.suit.rawValue)
-                        .font(.system(size: size.fontSize * 1.2))
+                        .font(.system(size: size.fontSize * 0.66))
                 }
 
             case 14:
                 // Ace: Single large centered pip
-                pip(size: size.fontSize * 2.0)
+                pip(size: size.fontSize * 1.05)
 
             default:
                 // Fallback: centered rank + suit
                 VStack(spacing: 2) {
                     Text(card.rank.symbol)
-                        .font(.system(size: size.fontSize * 1.2, weight: .bold))
+                        .font(.system(size: size.fontSize * 0.82, weight: .bold))
                     Text(card.suit.rawValue)
-                        .font(.system(size: size.fontSize * 1.4))
+                        .font(.system(size: size.fontSize * 0.94))
                 }
             }
         }

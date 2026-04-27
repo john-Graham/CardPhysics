@@ -8,6 +8,7 @@ public struct CardView: View {
     public var size: CardSize = .medium
     public var faceStyle: CardFaceStyle = .classic
     public var backStyle: CardBackStyle = .classicMaroon
+    public var castsShadow: Bool = true
 
     public init(
         card: Card,
@@ -16,7 +17,8 @@ public struct CardView: View {
         isPlayable: Bool = true,
         size: CardSize = .medium,
         faceStyle: CardFaceStyle = .classic,
-        backStyle: CardBackStyle = .classicMaroon
+        backStyle: CardBackStyle = .classicMaroon,
+        castsShadow: Bool = true
     ) {
         self.card = card
         self.isFaceUp = isFaceUp
@@ -25,6 +27,7 @@ public struct CardView: View {
         self.size = size
         self.faceStyle = faceStyle
         self.backStyle = backStyle
+        self.castsShadow = castsShadow
     }
 
     public enum CardSize {
@@ -68,7 +71,12 @@ public struct CardView: View {
             }
         }
         .frame(width: size.width, height: size.height)
-        .shadow(color: .black.opacity(0.3), radius: 2, x: 1, y: 1)
+        .shadow(
+            color: .black.opacity(castsShadow ? 0.3 : 0.0),
+            radius: castsShadow ? 2 : 0,
+            x: castsShadow ? 1 : 0,
+            y: castsShadow ? 1 : 0
+        )
         .opacity(isPlayable ? 1.0 : 0.5)
         .overlay(
             RoundedRectangle(cornerRadius: size.cornerRadius)

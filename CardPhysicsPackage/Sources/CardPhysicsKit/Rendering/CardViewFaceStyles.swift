@@ -17,38 +17,35 @@ extension CardView {
                     lineWidth: 1.5
                 )
 
-            VStack(spacing: 2) {
-                Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 1.1, weight: .bold))
-                Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 1.3))
-            }
+            pipLayout
             .foregroundColor(suitColor)
+            .frame(width: size.width * 0.50, height: size.height * 0.54)
+            .clipped()
 
             // Corner indices: top-left
             VStack(spacing: -2) {
                 Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.45, weight: .bold))
+                    .font(.system(size: size.fontSize * 0.38, weight: .bold, design: .serif))
                 Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.45))
+                    .font(.system(size: size.fontSize * 0.38))
             }
             .foregroundColor(suitColor)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.leading, size.width * 0.08)
-            .padding(.top, size.height * 0.04)
+            .padding(.leading, size.width * 0.07)
+            .padding(.top, size.height * 0.035)
 
             // Corner indices: bottom-right (rotated 180)
             VStack(spacing: -2) {
                 Text(card.rank.symbol)
-                    .font(.system(size: size.fontSize * 0.45, weight: .bold))
+                    .font(.system(size: size.fontSize * 0.38, weight: .bold, design: .serif))
                 Text(card.suit.rawValue)
-                    .font(.system(size: size.fontSize * 0.45))
+                    .font(.system(size: size.fontSize * 0.38))
             }
             .foregroundColor(suitColor)
             .rotationEffect(.degrees(180))
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.trailing, size.width * 0.08)
-            .padding(.bottom, size.height * 0.04)
+            .padding(.trailing, size.width * 0.07)
+            .padding(.bottom, size.height * 0.035)
         }
     }
 
@@ -221,6 +218,8 @@ extension CardView {
             // Traditional pip layout in center
             pipLayout
                 .foregroundColor(suitColor)
+                .frame(width: size.width * 0.50, height: size.height * 0.54)
+                .clipped()
 
             // Corner indices: top-left
             VStack(spacing: -3) {

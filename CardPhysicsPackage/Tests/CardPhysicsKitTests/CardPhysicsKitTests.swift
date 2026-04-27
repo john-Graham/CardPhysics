@@ -10,7 +10,7 @@ import SwiftUI
     #expect(card.displayName == "A♥")
 }
 
-@Test func physicsSettingsPresets() {
+@Test @MainActor func physicsSettingsPresets() {
     let settings = PhysicsSettings()
 
     settings.applyRealisticPreset()

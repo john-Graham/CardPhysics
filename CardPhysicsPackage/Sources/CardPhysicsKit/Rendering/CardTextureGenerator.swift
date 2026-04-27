@@ -14,12 +14,13 @@ final class CardTextureGenerator {
     // Render at exactly the CardView.large size so texture fills the 3D card with no padding
     private let renderWidth: CGFloat = 90
     private let renderHeight: CGFloat = 126
+    private let renderScale: CGFloat = 5.0
 
     private init() {
         // Pre-generate paper grain overlay once
         paperGrainImage = ProceduralTextureGenerator.paperGrain(
-            width: Int(renderWidth * 5.0),
-            height: Int(renderHeight * 5.0)
+            width: Int(renderWidth * renderScale),
+            height: Int(renderHeight * renderScale)
         )
     }
 
@@ -40,7 +41,8 @@ final class CardTextureGenerator {
             // Render the rank/suit overlay (transparent background with corner indices)
             let overlayImage = renderCardFace(card, style: faceStyle)
             // Composite: photo underneath, overlay on top
-            let finalImage = compositeOverlay(overlayImage, over: photoImage) ?? photoImage
+            let compositedImage = compositeOverlay(overlayImage, over: photoImage) ?? photoImage
+            let finalImage = roundedCardImage(compositedImage)
             let texture = try? TextureResource(
                 image: finalImage,
                 options: .init(semantic: .color)
@@ -62,7 +64,8 @@ final class CardTextureGenerator {
 
         guard let cgImage = renderCardFace(card, style: style) else { return nil }
 
-        let finalImage = compositePaperGrain(over: cgImage) ?? cgImage
+        let grainedImage = compositePaperGrain(over: cgImage) ?? cgImage
+        let finalImage = roundedCardImage(grainedImage)
 
         let texture = try? TextureResource(
             image: finalImage,
@@ -84,9 +87,10 @@ final class CardTextureGenerator {
             if let cached = cache[key] {
                 return cached
             }
-            guard let filename, let finalImage = loadAndCropCustomImage(filename: filename) else {
+            guard let filename, let loadedImage = loadAndCropCustomImage(filename: filename) else {
                 return renderStyledBackTexture(style: .classicMaroon)
             }
+            let finalImage = roundedCardImage(loadedImage)
             let texture = try? TextureResource(
                 image: finalImage,
                 options: .init(semantic: .color)
@@ -107,9 +111,10 @@ final class CardTextureGenerator {
         }
 
         guard let cgImage = renderCardBack(style: style) else { return nil }
+        let finalImage = roundedCardImage(cgImage)
 
         let texture = try? TextureResource(
-            image: cgImage,
+            image: finalImage,
             options: .init(semantic: .color)
         )
         if let texture {
@@ -137,7 +142,8 @@ final class CardTextureGenerator {
             return texture(for: card)
         }
 
-        let finalImage = compositeOverlay(wearOverlay, over: grainedImage) ?? grainedImage
+        let wornImage = compositeOverlay(wearOverlay, over: grainedImage) ?? grainedImage
+        let finalImage = roundedCardImage(wornImage)
 
         let texture = try? TextureResource(
             image: finalImage,
@@ -158,23 +164,23 @@ final class CardTextureGenerator {
     // MARK: - Rendering
 
     private func renderCardFace(_ card: Card, style: CardFaceStyle) -> CGImage? {
-        let view = CardView(card: card, isFaceUp: true, size: .large, faceStyle: style)
+        let view = CardView(card: card, isFaceUp: true, size: .large, faceStyle: style, castsShadow: false)
             .frame(width: renderWidth, height: renderHeight)
             .background(Color.clear)
         let renderer = ImageRenderer(content: view)
         renderer.isOpaque = false
-        renderer.scale = 5.0
+        renderer.scale = renderScale
         return renderer.cgImage
     }
 
     private func renderCardBack(style: CardBackStyle) -> CGImage? {
         let dummyCard = Card(suit: .spades, rank: .ace)
-        let view = CardView(card: dummyCard, isFaceUp: false, size: .large, backStyle: style)
+        let view = CardView(card: dummyCard, isFaceUp: false, size: .large, backStyle: style, castsShadow: false)
             .frame(width: renderWidth, height: renderHeight)
             .background(Color.clear)
         let renderer = ImageRenderer(content: view)
         renderer.isOpaque = false
-        renderer.scale = 5.0
+        renderer.scale = renderScale
         return renderer.cgImage
     }
 
@@ -189,8 +195,8 @@ final class CardTextureGenerator {
             return nil
         }
 
-        let targetWidth = Int(renderWidth * 5.0)  // 450
-        let targetHeight = Int(renderHeight * 5.0) // 630
+        let targetWidth = Int(renderWidth * renderScale)  // 450
+        let targetHeight = Int(renderHeight * renderScale) // 630
 
         // Aspect-fill crop to card proportions (5:7)
         let srcW = CGFloat(source.width)
@@ -228,6 +234,38 @@ final class CardTextureGenerator {
         ctx.draw(cropped, in: CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight))
 
         return ctx.makeImage()
+    }
+
+    /// Applies the same rounded-card alpha mask used by CardView so 3D textures
+    /// do not bake square transparent-area artifacts into the card corners.
+    private func roundedCardImage(_ image: CGImage) -> CGImage {
+        let w = image.width
+        let h = image.height
+
+        guard let ctx = CGContext(
+            data: nil,
+            width: w,
+            height: h,
+            bitsPerComponent: 8,
+            bytesPerRow: w * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return image }
+
+        let rect = CGRect(x: 0, y: 0, width: w, height: h)
+        let radius = CardView.CardSize.large.cornerRadius * renderScale
+        let path = CGPath(
+            roundedRect: rect,
+            cornerWidth: radius,
+            cornerHeight: radius,
+            transform: nil
+        )
+
+        ctx.addPath(path)
+        ctx.clip()
+        ctx.draw(image, in: rect)
+
+        return ctx.makeImage() ?? image
     }
 
     // MARK: - Image Processing

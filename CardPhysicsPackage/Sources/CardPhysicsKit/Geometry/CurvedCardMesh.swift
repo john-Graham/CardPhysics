@@ -25,11 +25,7 @@ enum CurvedCardMesh {
         let halfH = height / 2
         let halfD = depth / 2
 
-        let xSegs = 16
-        let zSegs = 1
-
-        let xCount = xSegs + 1  // 17
-        // let zCount = zSegs + 1  // 2 (unused but kept for reference)
+        let radius = min(CardEntity3D.cornerRadius, min(halfW, halfD) * 0.5)
 
         // Helper: parabolic displacement at normalized x (-1..1)
         func bow(_ nx: Float) -> Float {
@@ -45,122 +41,58 @@ enum CurvedCardMesh {
             return n
         }
 
+        let perimeter = roundedPerimeter(halfW: halfW, halfD: halfD, radius: radius)
+
         // =====================================================================
         // DESCRIPTOR 0: +Y face (material index 0 = card back texture)
         // Visible from above when card has identity rotation (face-down)
         // =====================================================================
-        var frontPositions: [SIMD3<Float>] = []
-        var frontNormals: [SIMD3<Float>] = []
-        var frontUVs: [SIMD2<Float>] = []
-        var frontIndices: [UInt32] = []
-
-        for zi in 0...zSegs {
-            let nz = Float(zi) / Float(zSegs)
-            let z = -halfD + nz * depth
-            for xi in 0...xSegs {
-                let nx = Float(xi) / Float(xSegs)
-                let x = -halfW + nx * width
-                let nxNorm = (2.0 * nx - 1.0)
-                let y = halfH + bow(nxNorm)
-
-                frontPositions.append(SIMD3<Float>(x, y, z))
-                frontNormals.append(frontNormal(nxNorm))
-                frontUVs.append(SIMD2<Float>(nx, 1.0 - nz))
-            }
-        }
-
-        // Front face triangles (counter-clockwise when viewed from +Y)
-        for zi in 0..<zSegs {
-            for xi in 0..<xSegs {
-                let tl = UInt32(zi * xCount + xi)
-                let tr = tl + 1
-                let bl = UInt32((zi + 1) * xCount + xi)
-                let br = bl + 1
-                frontIndices.append(contentsOf: [tl, bl, tr, tr, bl, br])
-            }
-        }
-
+        let front = makeFace(
+            perimeter: perimeter,
+            halfH: halfH,
+            width: width,
+            depth: depth,
+            bow: bow,
+            normalForX: frontNormal,
+            isFront: true
+        )
         var frontDescriptor = MeshDescriptor(name: "cardFront")
-        frontDescriptor.positions = MeshBuffers.Positions(frontPositions)
-        frontDescriptor.normals = MeshBuffers.Normals(frontNormals)
-        frontDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(frontUVs)
-        frontDescriptor.primitives = .triangles(frontIndices)
+        frontDescriptor.positions = MeshBuffers.Positions(front.positions)
+        frontDescriptor.normals = MeshBuffers.Normals(front.normals)
+        frontDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(front.uvs)
+        frontDescriptor.primitives = .triangles(front.indices)
         frontDescriptor.materials = .allFaces(0)
 
         // =====================================================================
         // DESCRIPTOR 1: -Y face + edges (material index 1 = card face texture)
         // Visible from above when card is flipped face-up (pi rotation on X)
         // =====================================================================
-        var backPositions: [SIMD3<Float>] = []
-        var backNormals: [SIMD3<Float>] = []
-        var backUVs: [SIMD2<Float>] = []
-        var backIndices: [UInt32] = []
-
-        // --- Back face (-Y side) ---
-        let backFaceStart = UInt32(backPositions.count)
-        for zi in 0...zSegs {
-            let nz = Float(zi) / Float(zSegs)
-            let z = -halfD + nz * depth
-            for xi in 0...xSegs {
-                let nx = Float(xi) / Float(xSegs)
-                let x = -halfW + nx * width
-                let nxNorm = (2.0 * nx - 1.0)
-                let y = -halfH + bow(nxNorm)
-
-                backPositions.append(SIMD3<Float>(x, y, z))
-                let n = frontNormal(nxNorm)
-                backNormals.append(-n) // flipped for back face
-                // Mirror UVs horizontally for back face
-                backUVs.append(SIMD2<Float>(1.0 - nx, 1.0 - nz))
-            }
-        }
-
-        // Back face triangles (reversed winding)
-        for zi in 0..<zSegs {
-            for xi in 0..<xSegs {
-                let tl = backFaceStart + UInt32(zi * xCount + xi)
-                let tr = tl + 1
-                let bl = backFaceStart + UInt32((zi + 1) * xCount + xi)
-                let br = bl + 1
-                backIndices.append(contentsOf: [tl, tr, bl, bl, tr, br])
-            }
-        }
-
-        // --- Edge strips (connect front and back along the 4 perimeter edges) ---
-
-        // Top edge (zi=0, z = -halfD) — curved along X
-        addCurvedEdgeStrip(
-            positions: &backPositions, normals: &backNormals, uvs: &backUVs, indices: &backIndices,
-            xSegs: xSegs, width: width, halfW: halfW, halfH: halfH,
-            z: -halfD, edgeNormalZ: -1.0, curvature: curvature
+        var back = makeFace(
+            perimeter: perimeter,
+            halfH: halfH,
+            width: width,
+            depth: depth,
+            bow: bow,
+            normalForX: frontNormal,
+            isFront: false
         )
-
-        // Bottom edge (zi=zSegs, z = +halfD) — curved along X
-        addCurvedEdgeStrip(
-            positions: &backPositions, normals: &backNormals, uvs: &backUVs, indices: &backIndices,
-            xSegs: xSegs, width: width, halfW: halfW, halfH: halfH,
-            z: halfD, edgeNormalZ: 1.0, curvature: curvature
-        )
-
-        // Left edge (xi=0, x = -halfW) — simple quad (no bow at edges)
-        addSideEdgeQuad(
-            positions: &backPositions, normals: &backNormals, uvs: &backUVs, indices: &backIndices,
-            x: -halfW, halfH: halfH, halfD: halfD, edgeNormalX: -1.0,
-            bowDisplacement: 0.0
-        )
-
-        // Right edge (xi=xSegs, x = +halfW) — simple quad
-        addSideEdgeQuad(
-            positions: &backPositions, normals: &backNormals, uvs: &backUVs, indices: &backIndices,
-            x: halfW, halfH: halfH, halfD: halfD, edgeNormalX: 1.0,
-            bowDisplacement: 0.0
+        addRoundedEdgeStrip(
+            perimeter: perimeter,
+            positions: &back.positions,
+            normals: &back.normals,
+            uvs: &back.uvs,
+            indices: &back.indices,
+            halfH: halfH,
+            width: width,
+            depth: depth,
+            bow: bow
         )
 
         var backDescriptor = MeshDescriptor(name: "cardBackAndEdges")
-        backDescriptor.positions = MeshBuffers.Positions(backPositions)
-        backDescriptor.normals = MeshBuffers.Normals(backNormals)
-        backDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(backUVs)
-        backDescriptor.primitives = .triangles(backIndices)
+        backDescriptor.positions = MeshBuffers.Positions(back.positions)
+        backDescriptor.normals = MeshBuffers.Normals(back.normals)
+        backDescriptor.textureCoordinates = MeshBuffers.TextureCoordinates(back.uvs)
+        backDescriptor.primitives = .triangles(back.indices)
         backDescriptor.materials = .allFaces(1)
 
         // Generate mesh with two descriptors — material indices set explicitly per descriptor
@@ -172,94 +104,122 @@ enum CurvedCardMesh {
         }
     }
 
-    // MARK: - Edge Helpers
+    // MARK: - Mesh Helpers
 
-    /// Curved edge strip connecting front and back faces along a Z-boundary (top or bottom edge)
-    private static func addCurvedEdgeStrip(
-        positions: inout [SIMD3<Float>],
-        normals: inout [SIMD3<Float>],
-        uvs: inout [SIMD2<Float>],
-        indices: inout [UInt32],
-        xSegs: Int,
-        width: Float,
-        halfW: Float,
-        halfH: Float,
-        z: Float,
-        edgeNormalZ: Float,
-        curvature: Float
-    ) {
-        let start = UInt32(positions.count)
-        let normal = SIMD3<Float>(0, 0, edgeNormalZ)
-        let edgeUVy: Float = edgeNormalZ < 0 ? 1.0 : 0.0
-
-        for xi in 0...(xSegs) {
-            let nx = Float(xi) / Float(xSegs)
-            let x = -halfW + nx * width
-            let nxNorm = 2.0 * nx - 1.0
-            let bowY = -curvature * (1.0 - nxNorm * nxNorm)
-
-            // Top vertex (front face edge)
-            positions.append(SIMD3<Float>(x, halfH + bowY, z))
-            normals.append(normal)
-            uvs.append(SIMD2<Float>(nx, edgeUVy))
-
-            // Bottom vertex (back face edge)
-            positions.append(SIMD3<Float>(x, -halfH + bowY, z))
-            normals.append(normal)
-            uvs.append(SIMD2<Float>(nx, edgeUVy))
-        }
-
-        let vertsPerCol: UInt32 = 2
-        for xi in 0..<UInt32(xSegs) {
-            let col = start + xi * vertsPerCol
-            let nextCol = col + vertsPerCol
-            let t0 = col       // top-left
-            let b0 = col + 1   // bottom-left
-            let t1 = nextCol   // top-right
-            let b1 = nextCol + 1 // bottom-right
-
-            if edgeNormalZ < 0 {
-                indices.append(contentsOf: [t0, t1, b0, b0, t1, b1])
-            } else {
-                indices.append(contentsOf: [t0, b0, t1, t1, b0, b1])
-            }
-        }
+    private struct MeshData {
+        var positions: [SIMD3<Float>] = []
+        var normals: [SIMD3<Float>] = []
+        var uvs: [SIMD2<Float>] = []
+        var indices: [UInt32] = []
     }
 
-    /// Simple quad for left/right edges (no curvature since bow is zero at x extremes)
-    private static func addSideEdgeQuad(
+    private static func roundedPerimeter(halfW: Float, halfD: Float, radius: Float) -> [SIMD2<Float>] {
+        let segments = 8
+        let centers: [(SIMD2<Float>, ClosedRange<Float>)] = [
+            (SIMD2(-halfW + radius, -halfD + radius), Float.pi...(Float.pi * 1.5)),
+            (SIMD2(halfW - radius, -halfD + radius), (Float.pi * 1.5)...(Float.pi * 2.0)),
+            (SIMD2(halfW - radius, halfD - radius), 0...(Float.pi * 0.5)),
+            (SIMD2(-halfW + radius, halfD - radius), (Float.pi * 0.5)...Float.pi),
+        ]
+
+        var points: [SIMD2<Float>] = []
+        for (center, range) in centers {
+            for step in 0...segments {
+                if !points.isEmpty && step == 0 { continue }
+                let t = Float(step) / Float(segments)
+                let angle = range.lowerBound + (range.upperBound - range.lowerBound) * t
+                points.append(SIMD2(
+                    center.x + cos(angle) * radius,
+                    center.y + sin(angle) * radius
+                ))
+            }
+        }
+        return points
+    }
+
+    private static func makeFace(
+        perimeter: [SIMD2<Float>],
+        halfH: Float,
+        width: Float,
+        depth: Float,
+        bow: (Float) -> Float,
+        normalForX: (Float) -> SIMD3<Float>,
+        isFront: Bool
+    ) -> MeshData {
+        var data = MeshData()
+
+        func appendVertex(x: Float, z: Float) {
+            let u = (x / width) + 0.5
+            let v = 1.0 - ((z / depth) + 0.5)
+            let nxNorm = 2.0 * u - 1.0
+            let faceOffset = isFront ? halfH : -halfH
+
+            data.positions.append(SIMD3<Float>(x, faceOffset + bow(nxNorm), z))
+            data.normals.append(isFront ? normalForX(nxNorm) : -normalForX(nxNorm))
+            data.uvs.append(SIMD2<Float>(isFront ? u : 1.0 - u, v))
+        }
+
+        appendVertex(x: 0, z: 0)
+        for point in perimeter {
+            appendVertex(x: point.x, z: point.y)
+        }
+
+        let count = UInt32(perimeter.count)
+        for i in 0..<count {
+            let current = i + 1
+            let next = ((i + 1) % count) + 1
+            if isFront {
+                data.indices.append(contentsOf: [0, next, current])
+            } else {
+                data.indices.append(contentsOf: [0, current, next])
+            }
+        }
+
+        return data
+    }
+
+    private static func addRoundedEdgeStrip(
+        perimeter: [SIMD2<Float>],
         positions: inout [SIMD3<Float>],
         normals: inout [SIMD3<Float>],
         uvs: inout [SIMD2<Float>],
         indices: inout [UInt32],
-        x: Float,
         halfH: Float,
-        halfD: Float,
-        edgeNormalX: Float,
-        bowDisplacement: Float
+        width: Float,
+        depth: Float,
+        bow: (Float) -> Float
     ) {
         let start = UInt32(positions.count)
-        let normal = SIMD3<Float>(edgeNormalX, 0, 0)
 
-        let topY = halfH + bowDisplacement
-        let botY = -halfH + bowDisplacement
+        for i in 0..<perimeter.count {
+            let point = perimeter[i]
+            let prev = perimeter[(i - 1 + perimeter.count) % perimeter.count]
+            let next = perimeter[(i + 1) % perimeter.count]
+            let tangent = simd_normalize(next - prev)
+            let outward = simd_normalize(SIMD2<Float>(tangent.y, -tangent.x))
+            let u = (point.x / width) + 0.5
+            let v = 1.0 - ((point.y / depth) + 0.5)
+            let nxNorm = 2.0 * u - 1.0
+            let bowY = bow(nxNorm)
+            let normal = SIMD3<Float>(outward.x, 0, outward.y)
 
-        positions.append(SIMD3<Float>(x, topY, -halfD))  // 0: front-top
-        positions.append(SIMD3<Float>(x, botY, -halfD))  // 1: front-bottom
-        positions.append(SIMD3<Float>(x, topY, halfD))   // 2: back-top
-        positions.append(SIMD3<Float>(x, botY, halfD))   // 3: back-bottom
+            positions.append(SIMD3<Float>(point.x, halfH + bowY, point.y))
+            normals.append(normal)
+            uvs.append(SIMD2<Float>(u, v))
 
-        for _ in 0..<4 { normals.append(normal) }
-        let u: Float = edgeNormalX < 0 ? 0 : 1
-        uvs.append(contentsOf: [
-            SIMD2<Float>(u, 1), SIMD2<Float>(u, 1),
-            SIMD2<Float>(u, 0), SIMD2<Float>(u, 0),
-        ])
+            positions.append(SIMD3<Float>(point.x, -halfH + bowY, point.y))
+            normals.append(normal)
+            uvs.append(SIMD2<Float>(u, v))
+        }
 
-        if edgeNormalX < 0 {
-            indices.append(contentsOf: [start, start + 2, start + 1, start + 1, start + 2, start + 3])
-        } else {
-            indices.append(contentsOf: [start, start + 1, start + 2, start + 2, start + 1, start + 3])
+        for i in 0..<UInt32(perimeter.count) {
+            let current = start + i * 2
+            let next = start + ((i + 1) % UInt32(perimeter.count)) * 2
+            let frontCurrent = current
+            let backCurrent = current + 1
+            let frontNext = next
+            let backNext = next + 1
+            indices.append(contentsOf: [frontCurrent, frontNext, backCurrent, backCurrent, frontNext, backNext])
         }
     }
 }

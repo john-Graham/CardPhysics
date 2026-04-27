@@ -4,16 +4,16 @@ import Foundation
 @Observable
 @MainActor
 public final class InHandsSideSettings {
-    public var fanAngle: Float = -0.85      // Total fan angle (~-49° natural fan)
-    public var tiltAngle: Float = -0.38     // Tilt back angle in radians (~-22°, shows face from overhead cam)
-    public var arcRadius: Float = 0.20      // Radius of the fan arc (~35% card face visible)
-    public var verticalSpacing: Float = 0.002  // Vertical spacing between cards (very tight)
-    public var rotationOffset: Float = 0.035  // Additional Y-axis rotation offset (~2°)
-    public var curvature: Float = -0.015     // Card curvature away from player (meters, 0 = flat)
+    public var fanAngle: Float = -0.96      // Total fan angle (~-55° five-card hand fan)
+    public var tiltAngle: Float = -0.22     // Slight lean back while keeping faces flat to camera
+    public var arcRadius: Float = 0.17      // Thumb-to-card-center distance
+    public var verticalSpacing: Float = 0.0012  // Tight paper-stack spacing
+    public var rotationOffset: Float = 0.015  // Small face-to-player correction
+    public var curvature: Float = 0.0       // Held cards should read flat, not curled
 
     public init() {}
 
-    public init(fanAngle: Float, tiltAngle: Float, arcRadius: Float, verticalSpacing: Float, rotationOffset: Float = 0.0, curvature: Float = -0.012) {
+    public init(fanAngle: Float, tiltAngle: Float, arcRadius: Float, verticalSpacing: Float, rotationOffset: Float = 0.015, curvature: Float = 0.0) {
         self.fanAngle = fanAngle
         self.tiltAngle = tiltAngle
         self.arcRadius = arcRadius
@@ -40,6 +40,7 @@ public enum ShadowQuality: String, CaseIterable, Sendable {
 @Observable
 @MainActor
 public final class PhysicsSettings {
+    private static let defaultSide1TiltAngle: Float = -(38.0 * .pi / 180.0)
 
     // MARK: - Deal Animation
     public var dealDuration: Double = 0.5
@@ -52,7 +53,12 @@ public final class PhysicsSettings {
     public var pickUpRotation: Double = 5.0
 
     // MARK: - In Hands Animation
-    public var inHandsSide1: InHandsSideSettings = InHandsSideSettings()  // Bottom (closest to viewer)
+    public var inHandsSide1: InHandsSideSettings = InHandsSideSettings(
+        fanAngle: -0.96,
+        tiltAngle: defaultSide1TiltAngle,
+        arcRadius: 0.17,
+        verticalSpacing: 0.0012
+    )  // Bottom (closest to viewer)
     public var inHandsSide2: InHandsSideSettings = InHandsSideSettings()  // Left
     public var inHandsSide3: InHandsSideSettings = InHandsSideSettings()  // Top (farthest from viewer)
     public var inHandsSide4: InHandsSideSettings = InHandsSideSettings()  // Right
@@ -139,11 +145,14 @@ public final class PhysicsSettings {
 
         // Set same values for all sides
         for side in [inHandsSide1, inHandsSide2, inHandsSide3, inHandsSide4] {
-            side.fanAngle = .pi / 6
-            side.tiltAngle = 0.3
-            side.arcRadius = 0.3
-            side.verticalSpacing = 0.015
+            side.fanAngle = -0.96
+            side.tiltAngle = -0.22
+            side.arcRadius = 0.17
+            side.verticalSpacing = 0.0012
+            side.rotationOffset = 0.015
+            side.curvature = 0.0
         }
+        inHandsSide1.tiltAngle = Self.defaultSide1TiltAngle
         inHandsAnimationDuration = 0.4
 
         cardCurvature = 0.002
@@ -161,10 +170,12 @@ public final class PhysicsSettings {
 
         // Set same values for all sides
         for side in [inHandsSide1, inHandsSide2, inHandsSide3, inHandsSide4] {
-            side.fanAngle = .pi / 5
-            side.tiltAngle = 0.35
-            side.arcRadius = 0.35
-            side.verticalSpacing = 0.02
+            side.fanAngle = -1.04
+            side.tiltAngle = -0.24
+            side.arcRadius = 0.18
+            side.verticalSpacing = 0.0015
+            side.rotationOffset = 0.018
+            side.curvature = 0.0
         }
         inHandsAnimationDuration = 0.8
 
@@ -183,10 +194,12 @@ public final class PhysicsSettings {
 
         // Set same values for all sides
         for side in [inHandsSide1, inHandsSide2, inHandsSide3, inHandsSide4] {
-            side.fanAngle = .pi / 7
-            side.tiltAngle = 0.25
-            side.arcRadius = 0.25
-            side.verticalSpacing = 0.01
+            side.fanAngle = -0.86
+            side.tiltAngle = -0.18
+            side.arcRadius = 0.16
+            side.verticalSpacing = 0.001
+            side.rotationOffset = 0.012
+            side.curvature = 0.0
         }
         inHandsAnimationDuration = 0.2
 

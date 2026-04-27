@@ -63,10 +63,10 @@ CardPhysicsScene(
 ## Build & Test
 ```bash
 cd CardPhysicsPackage
-swift build
-swift test
+xcodebuild test -scheme CardPhysicsPackage -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.4.1'
 ```
-Or in Xcode: Cmd+B to build, Cmd+U to test.
+
+`CardPhysicsPackage` is iOS-only. Do not use bare `swift test`; SwiftPM runs it for the host macOS platform, which cannot compile UIKit-backed code. Or in Xcode: choose an iOS 26.4+ simulator/device and use Cmd+B/Cmd+U.
 
 ## Architecture Summary
 - **Core/Models**: `Card`, `Suit`, `Rank`, `CardWearComponent` -- pure data, `Sendable`

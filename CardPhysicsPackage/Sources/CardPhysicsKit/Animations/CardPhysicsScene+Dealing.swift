@@ -80,13 +80,7 @@ internal func dealCardsEuchre() async {
 }
 
 internal func dealCardsInHands() async {
-    // Create hands for all 4 sides
-    for side in 1...4 {
-        let handPosition = HandEntity3D.getHandPosition(side: side)
-        let hand = HandEntity3D.makeHand(side: side, position: handPosition)
-        handEntities.append(hand)
-        rootEntity.addChild(hand)
-    }
+    removeHandEntities()
 
     // Distribute cards evenly to each side
     for (index, cardIndex) in cards.indices.reversed().enumerated() {

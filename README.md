@@ -60,6 +60,15 @@ CardPhysics/
 4. Use the floating buttons to trigger animations
 5. Open the Settings panel to adjust physics parameters in real time
 
+### Test the Swift Package
+
+`CardPhysicsPackage` is iOS-only. Use Xcode's iOS simulator test runner rather than bare `swift test`, which builds for the host macOS platform.
+
+```bash
+cd CardPhysicsPackage
+xcodebuild test -scheme CardPhysicsPackage -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.4.1'
+```
+
 ### Installing on Physical Device
 
 For testing on John's iPhone (iOS 26.3):

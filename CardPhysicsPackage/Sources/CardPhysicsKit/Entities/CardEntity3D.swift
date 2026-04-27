@@ -8,8 +8,8 @@ enum CardEntity3D {
     // Visible edge thickness: 2mm (exaggerated from realistic 0.4mm for better visibility)
     static let cardHeight: Float = 0.002
     static let cardDepth: Float = 0.176
-    // Corner radius for rounded 3D corners (will be used in mesh generation)
-    static let cornerRadius: Float = 0.002
+    // Match CardView.large's 10pt radius against its 90pt render width.
+    static let cornerRadius: Float = cardWidth * (10.0 / 90.0)
 
     static func makeCard(
         _ card: Card,

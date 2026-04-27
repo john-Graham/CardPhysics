@@ -11,7 +11,7 @@ public struct CardPhysicsView: View {
     @State private var cameraTarget: SIMD3<Float> = [0, 0, 0]
     @State private var coordinator = SceneCoordinator()
     @State private var cameraPresetTask: Task<Void, Never>?
-    @State private var selectedDealMode: DealMode = .twelve
+    @State private var selectedDealMode: DealMode = .twenty
     @State private var selectedCorner: GatherCorner = .bottomLeft
 
     public init() {}
@@ -99,60 +99,49 @@ public struct CardPhysicsView: View {
                             }
 
                             Button("Deal Settings") {
-                                panelState.closeAll()
-                                panelState.showDealSettings = true
+                                panelState.show(.dealSettings)
                             }
 
                             Button("Pick Up Settings") {
-                                panelState.closeAll()
-                                panelState.showPickUpSettings = true
+                                panelState.show(.pickUpSettings)
                             }
 
                             Button("In Hands Settings") {
-                                panelState.closeAll()
-                                panelState.showInHandsSettings = true
+                                panelState.show(.inHandsSettings)
                             }
 
                             Button("Card Design") {
-                                panelState.closeAll()
-                                panelState.showCardDesign = true
+                                panelState.show(.cardDesign)
                             }
 
                             Button("Table Theme") {
-                                panelState.closeAll()
-                                panelState.showTableTheme = true
+                                panelState.show(.tableTheme)
                             }
 
                             Button("Room Background") {
-                                panelState.closeAll()
-                                panelState.showRoomBackground = true
+                                panelState.show(.roomBackground)
                             }
 
                             Button("Lighting") {
-                                panelState.closeAll()
-                                panelState.showLighting = true
+                                panelState.show(.lighting)
                             }
 
                             Button("Card Effects") {
-                                panelState.closeAll()
-                                panelState.showCardEffects = true
+                                panelState.show(.cardEffects)
                             }
 
                             Button("Environmental Effects") {
-                                panelState.closeAll()
-                                panelState.showEnvironmentalEffects = true
+                                panelState.show(.environmentalEffects)
                             }
 
                             if settings.enableGravityFeature {
                                 Button("Gravity Settings") {
-                                    panelState.closeAll()
-                                    panelState.showGravitySettings = true
+                                    panelState.show(.gravitySettings)
                                 }
                             }
 
                             Button("Camera") {
-                                panelState.closeAll()
-                                panelState.showCameraSettings = true
+                                panelState.show(.cameraSettings)
                             }
 
                             Divider()
@@ -167,7 +156,7 @@ public struct CardPhysicsView: View {
                                 Button(action: {
                                     settings.enableGravityFeature.toggle()
                                     if !settings.enableGravityFeature {
-                                        panelState.showGravitySettings = false
+                                        panelState.closeIfShowing(.gravitySettings)
                                     }
                                 }) {
                                     Label("Gravity Controls", systemImage: settings.enableGravityFeature ? "checkmark" : "")
@@ -204,12 +193,12 @@ public struct CardPhysicsView: View {
                 Spacer()
             }
 
-            // Camera control panel
-            if panelState.showCameraSettings {
+            switch panelState.activePanel {
+            case .cameraSettings:
                 CameraControlPanel(
                     cameraPosition: $cameraPosition,
                     cameraTarget: $cameraTarget,
-                    isPresented: $panelState.showCameraSettings,
+                    isPresented: panelBinding(for: .cameraSettings),
                     showPlayerPresets: settings.enablePlayerCameraPresets,
                     showOverheadPreset: settings.enableOverheadCameraPreset,
                     onPresetSelected: { preset in
@@ -223,114 +212,87 @@ public struct CardPhysicsView: View {
                     }
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // Deal Settings Panel
-            if panelState.showDealSettings {
+            case .dealSettings:
                 DealSettingsPanel(
                     settings: settings,
-                    isPresented: $panelState.showDealSettings
+                    isPresented: panelBinding(for: .dealSettings)
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // Pick Up Settings Panel
-            if panelState.showPickUpSettings {
+            case .pickUpSettings:
                 PickUpSettingsPanel(
                     settings: settings,
-                    isPresented: $panelState.showPickUpSettings
+                    isPresented: panelBinding(for: .pickUpSettings)
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // In Hands Settings Panel
-            if panelState.showInHandsSettings {
+            case .inHandsSettings:
                 InHandsSettingsPanel(
                     settings: settings,
-                    isPresented: $panelState.showInHandsSettings,
+                    isPresented: panelBinding(for: .inHandsSettings),
                     coordinator: coordinator
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // Card Design Panel
-            if panelState.showCardDesign {
+            case .cardDesign:
                 CardDesignPanel(
                     settings: settings,
-                    isPresented: $panelState.showCardDesign,
+                    isPresented: panelBinding(for: .cardDesign),
                     onDesignChanged: {
                         CardTextureGenerator.shared.invalidateAll()
                         resetScene()
                     }
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // Room Background Panel
-            if panelState.showRoomBackground {
+            case .roomBackground:
                 RoomBackgroundPanel(
                     settings: settings,
-                    isPresented: $panelState.showRoomBackground
+                    isPresented: panelBinding(for: .roomBackground)
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // Table Theme Panel
-            if panelState.showTableTheme {
+            case .tableTheme:
                 TableThemePanel(
                     settings: settings,
-                    isPresented: $panelState.showTableTheme
+                    isPresented: panelBinding(for: .tableTheme)
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // Lighting Panel
-            if panelState.showLighting {
+            case .lighting:
                 LightingPanel(
                     settings: settings,
-                    isPresented: $panelState.showLighting
+                    isPresented: panelBinding(for: .lighting)
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // Card Effects Panel
-            if panelState.showCardEffects {
+            case .cardEffects:
                 CardEffectsPanel(
                     settings: settings,
-                    isPresented: $panelState.showCardEffects
+                    isPresented: panelBinding(for: .cardEffects)
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // Environmental Effects Panel
-            if panelState.showEnvironmentalEffects {
+            case .environmentalEffects:
                 EnvironmentalEffectsPanel(
                     settings: settings,
-                    isPresented: $panelState.showEnvironmentalEffects
+                    isPresented: panelBinding(for: .environmentalEffects)
                 )
                 .transition(.move(edge: .trailing))
-            }
 
-            // Gravity Settings Panel
-            if panelState.showGravitySettings && settings.enableGravityFeature {
+            case .gravitySettings where settings.enableGravityFeature:
                 GravitySettingsPanel(
                     settings: settings,
-                    isPresented: $panelState.showGravitySettings
+                    isPresented: panelBinding(for: .gravitySettings)
                 )
                 .transition(.move(edge: .trailing))
+
+            case .gravitySettings, .none:
+                EmptyView()
             }
         }
-        .animation(.easeInOut, value: panelState.showDealSettings)
-        .animation(.easeInOut, value: panelState.showPickUpSettings)
-        .animation(.easeInOut, value: panelState.showInHandsSettings)
-        .animation(.easeInOut, value: panelState.showCardDesign)
-        .animation(.easeInOut, value: panelState.showRoomBackground)
-        .animation(.easeInOut, value: panelState.showTableTheme)
-        .animation(.easeInOut, value: panelState.showLighting)
-        .animation(.easeInOut, value: panelState.showCardEffects)
-        .animation(.easeInOut, value: panelState.showEnvironmentalEffects)
-        .animation(.easeInOut, value: panelState.showCameraSettings)
-        .animation(.easeInOut, value: panelState.showGravitySettings)
+        .animation(.easeInOut, value: panelState.activePanel)
         .persistentSystemOverlays(.hidden)
     }
 
@@ -370,6 +332,19 @@ public struct CardPhysicsView: View {
         cameraPresetTask?.cancel()
         sceneKey = UUID()
         coordinator = SceneCoordinator()
+    }
+
+    private func panelBinding(for panel: PanelKind) -> Binding<Bool> {
+        Binding(
+            get: { panelState.isShowing(panel) },
+            set: { isPresented in
+                if isPresented {
+                    panelState.show(panel)
+                } else {
+                    panelState.closeIfShowing(panel)
+                }
+            }
+        )
     }
 
     private func printCurrentSettings() {

@@ -5,73 +5,47 @@ struct RoomBackgroundPanel: View {
     @Binding var isPresented: Bool
 
     var body: some View {
-        HStack {
-            Spacer()
+        SettingsPanelContainer(title: "Room Background", isPresented: $isPresented, width: 300, spacing: 16) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(RoomEnvironment.allCases, id: \.self) { room in
+                        RoomThumbnail(
+                            room: room,
+                            isSelected: settings.roomEnvironment == room,
+                            onSelect: {
+                                settings.roomEnvironment = room
+                            }
+                        )
+                    }
+                }
+            }
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Header
-                    HStack {
-                        Text("Room Background")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                        Spacer()
-                        Button("Done") {
-                            isPresented = false
-                        }
+            if settings.roomEnvironment == .customImage {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Custom Image")
                         .font(.caption)
-                        .foregroundColor(.blue)
+                        .fontWeight(.semibold)
+
+                    RoomPhotoPicker { image in
+                        handleRoomImageCapture(image)
                     }
-
-                    Divider()
-
-                    // Room thumbnails
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(RoomEnvironment.allCases, id: \.self) { room in
-                                RoomThumbnail(
-                                    room: room,
-                                    isSelected: settings.roomEnvironment == room,
-                                    onSelect: {
-                                        settings.roomEnvironment = room
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    // Custom image import
-                    if settings.roomEnvironment == .customImage {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Custom Image")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-
-                            RoomPhotoPicker { image in
-                                handleRoomImageCapture(image)
-                            }
-                            .font(.caption2)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .glassEffect(.regular.tint(Color.blue.opacity(0.6)).interactive(), in: .rect(cornerRadius: 8))
-                        }
-                    }
-
-                    // Room rotation slider
-                    SliderSetting(
-                        label: "Rotation",
-                        value: $settings.roomRotation,
-                        range: 0...360,
-                        unit: "°"
+                    .font(.caption2)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .glassEffect(
+                        .regular.tint(Color.blue.opacity(0.6)).interactive(),
+                        in: .rect(cornerRadius: 8)
                     )
                 }
-                .padding(12)
             }
-            .frame(width: 300)
-            .glassEffect(.regular, in: .rect(cornerRadius: 12))
-            .padding(.trailing, 8)
-            .padding(.vertical, 8)
+
+            SliderSetting(
+                label: "Rotation",
+                value: $settings.roomRotation,
+                range: 0...360,
+                unit: "°"
+            )
         }
     }
 
@@ -89,4 +63,3 @@ struct RoomBackgroundPanel: View {
         settings.roomEnvironment = .customImage
     }
 }
-

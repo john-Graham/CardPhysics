@@ -15,64 +15,31 @@ struct CardDesignPanel: View {
     }
 
     var body: some View {
-        HStack {
-            Spacer()
+        SettingsPanelContainer(title: "Card Design", isPresented: $isPresented, width: 350, spacing: 16) {
+            Text("Face Style")
+                .font(.caption)
+                .fontWeight(.semibold)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Header
-                    HStack {
-                        Text("Card Design")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                        Spacer()
-                        Button("Done") {
-                            isPresented = false
-                        }
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                    }
+            faceStylePicker
 
-                    Divider()
+            Text("Back Style")
+                .font(.caption)
+                .fontWeight(.semibold)
 
-                    // Face Style
-                    Text("Face Style")
-                        .font(.caption)
-                        .fontWeight(.semibold)
+            backStylePicker
 
-                    faceStylePicker
+            Text("Preview")
+                .font(.caption)
+                .fontWeight(.semibold)
 
-                    // Back Style
-                    Text("Back Style")
-                        .font(.caption)
-                        .fontWeight(.semibold)
+            designPreview
 
-                    backStylePicker
-
-                    // Preview
-                    Text("Preview")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-
-                    designPreview
-
-                    // Curvature slider
-                    SliderSetting(
-                        label: "Curvature",
-                        value: Binding(
-                            get: { Double(settings.cardCurvature) },
-                            set: { settings.cardCurvature = Float($0) }
-                        ),
-                        range: 0.0...0.01,
-                        unit: ""
-                    )
-                }
-                .padding(12)
-            }
-            .frame(width: 350)
-            .glassEffect(.regular, in: .rect(cornerRadius: 12))
-            .padding(.trailing, 8)
-            .padding(.vertical, 8)
+            FloatSliderSetting(
+                label: "Curvature",
+                value: $settings.cardCurvature,
+                range: 0.0...0.01,
+                unit: ""
+            )
         }
         .fullScreenCover(isPresented: $showingFaceCamera) {
             CameraPicker { image in
@@ -314,4 +281,3 @@ struct CardDesignPanel: View {
         onDesignChanged()
     }
 }
-

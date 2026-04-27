@@ -18,10 +18,10 @@ extension CardPhysicsScene {
     /// The pivot point sits well above the rail tops and inward from the rail edges
     /// so cards don't clip into the rail geometry.
     internal func sideGeometry(for side: Int, tiltAngle: Float) -> SideGeometry {
-        // Rail tops are at ~0.0325m; lift the pivot well above for clearance
-        let pivotY: Float = 0.10
-        // Pull fan centers inward from the rail inner edges to prevent rail overlap
-        let inset: Float = 0.05
+        // Keep the grip near the rail/hand instead of floating in the table center.
+        let pivotY: Float = 0.075
+        // Slightly outside the inner rail so the card bases read as held in hand.
+        let inset: Float = -0.015
 
         // baseYRotation: after standUp (-π/2 around X), the card face points +Z.
         // Rotate around Y to aim the face toward the player on each side.
@@ -123,15 +123,23 @@ extension CardPhysicsScene {
     public func fanCardsInHands() async {
         guard !cards.isEmpty else { return }
 
+        removeHandEntities()
+
         // Strip physics from all cards — they stay as direct children of rootEntity
         for card in cards {
             stripPhysics(from: card)
-            // Flatten any existing curvature — cards are flat in the fan
-            applyCardCurvature(card, curvature: 0)
         }
 
         cardsInFanState = true
         updateInHandsCardPositions()
+    }
+
+    /// Removes any legacy hand models before entering the fan view.
+    internal func removeHandEntities() {
+        for hand in handEntities {
+            hand.removeFromParent()
+        }
+        handEntities.removeAll()
     }
 
     /// Flips a card 180 degrees with a short animation.
@@ -215,9 +223,6 @@ extension CardPhysicsScene {
             sideCards[side, default: []].append(card)
         }
 
-        // Half the card's standing height — distance from bottom pivot to card center
-        let fanRadius = CardEntity3D.cardDepth / 2  // 0.088m
-
         for side in 1...4 {
             guard let cardsInSide = sideCards[side], !cardsInSide.isEmpty else { continue }
 
@@ -225,6 +230,12 @@ extension CardPhysicsScene {
             let geo = sideGeometry(for: side, tiltAngle: sideSettings.tiltAngle)
 
             let cardCount = cardsInSide.count
+            let pivotToCenter = max(
+                CardEntity3D.cardDepth * 0.48,
+                min(sideSettings.arcRadius, CardEntity3D.cardDepth * 0.82)
+            )
+            let overlapLift = max(0.0006, min(sideSettings.verticalSpacing, 0.004))
+            let gripBias = CardEntity3D.cardWidth * 0.08
 
             for (index, card) in cardsInSide.enumerated() {
                 // Fan progress: -0.5 to +0.5
@@ -233,35 +244,50 @@ extension CardPhysicsScene {
                     : 0.0
                 let arcAngle = t * sideSettings.fanAngle
 
-                // Fan rotation around facing direction, pivoting at bottom of card stack
+                // Fan rotation around the hand-facing direction. The pivot is biased
+                // toward the thumb instead of the exact bottom center, which keeps
+                // the lower corners gathered while the top edges open like real cards.
                 let fanRotation = simd_quatf(angle: arcAngle, axis: geo.facing)
+                let cardCenterFromGrip = geo.spread * gripBias + SIMD3<Float>(0, pivotToCenter, 0)
 
-                // Card center offset from pivot (straight up before fan rotation)
-                let centerOffset = SIMD3<Float>(0, fanRadius, 0)
-
-                // Apply fan rotation to the offset (rotates card around bottom pivot)
-                let fannedOffset = fanRotation.act(centerOffset)
+                // Apply fan rotation to the offset (rotates card around thumb pivot)
+                let fannedOffset = fanRotation.act(cardCenterFromGrip)
 
                 // Apply tilt (lean cards back to show faces to overhead camera)
                 let tiltRotation = simd_quatf(angle: sideSettings.tiltAngle, axis: geo.spread)
                 let tiltedOffset = tiltRotation.act(fannedOffset)
 
-                // Depth ordering: tiny offset along facing to prevent z-fighting
-                let depthOrder = Float(index) * CardEntity3D.cardHeight * geo.facing
+                // Depth ordering: tiny offsets prevent z-fighting while preserving
+                // the tight paper stack. Later cards sit slightly forward and up,
+                // matching the visible overlap in a held fan.
+                let layer = Float(index)
+                let depthOrder = layer * overlapLift * 0.35 * geo.facing
+                let stackLift = layer * overlapLift * SIMD3<Float>(0, 1, 0)
+                let naturalStagger = t * CardEntity3D.cardWidth * 0.025 * geo.spread
 
-                let cardPosition = geo.fanCenter + tiltedOffset + depthOrder
+                let cardPosition = geo.fanCenter + tiltedOffset + depthOrder + stackLift + naturalStagger
 
                 // Card orientation composed from clear, independent rotations:
                 // 1. Stand card up (-π/2 around X): face points +Z, card stands vertical
                 let standUp = simd_quatf(angle: -.pi / 2, axis: SIMD3<Float>(1, 0, 0))
                 // 2. Face toward player (Y rotation for this side)
-                let facePlayer = simd_quatf(angle: geo.baseYRotation, axis: SIMD3<Float>(0, 1, 0))
+                let facePlayer = simd_quatf(angle: geo.baseYRotation + sideSettings.rotationOffset, axis: SIMD3<Float>(0, 1, 0))
                 // 3. Fan spread (rotate around facing axis, same as position fan)
                 // 4. Tilt back (lean toward player to show faces from overhead)
                 let orientation = tiltRotation * fanRotation * facePlayer * standUp
 
-                card.position = cardPosition
-                card.orientation = orientation
+                applyCardCurvature(card, curvature: sideSettings.curvature)
+
+                card.move(
+                    to: Transform(
+                        scale: card.scale,
+                        rotation: orientation,
+                        translation: cardPosition
+                    ),
+                    relativeTo: nil,
+                    duration: settings.inHandsAnimationDuration,
+                    timingFunction: .easeInOut
+                )
             }
         }
     }
