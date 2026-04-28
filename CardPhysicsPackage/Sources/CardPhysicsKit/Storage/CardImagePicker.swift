@@ -1,3 +1,6 @@
+// Public CardEngine API: reusable image picker for custom card faces/backs.
+// Consumers may use this directly or build their own picker against the storage layer.
+
 import SwiftUI
 import PhotosUI
 import UIKit
