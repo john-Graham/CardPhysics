@@ -6,3 +6,6 @@ xcuserdata/
 DerivedData/
 .swiftpm/
 .netrc
+
+# git worktrees
+.worktrees/
