@@ -1,5 +1,7 @@
-// Public CardEngine API: reusable image picker for custom card faces/backs.
-// Consumers may use this directly or build their own picker against the storage layer.
+// Decision (Phase 2 of CardEngine extraction): this file stays in CardEngine.
+// Public access modifiers and DocC (`///`) comments are added in Phase 5.
+// The picker types here may be used directly by consumers, or consumers may
+// build their own picker against `CardImageStorage`.
 
 import SwiftUI
 import PhotosUI
