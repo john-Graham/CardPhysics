@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1D52BD442F383EBC00845B46 /* CardPhysicsKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1D0736D0D8A729D01CC74C1A /* CardPhysicsKit */; };
+		1D52BD442F383EBC00845B46 /* CardPhysicsSandbox in Frameworks */ = {isa = PBXBuildFile; productRef = 1D0736D0D8A729D01CC74C1A /* CardPhysicsSandbox */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,7 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1D52BD442F383EBC00845B46 /* CardPhysicsKit in Frameworks */,
+				1D52BD442F383EBC00845B46 /* CardPhysicsSandbox in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -117,7 +117,7 @@
 			);
 			name = CardPhysicsApp;
 			packageProductDependencies = (
-				1D0736D0D8A729D01CC74C1A /* CardPhysicsKit */,
+				1D0736D0D8A729D01CC74C1A /* CardPhysicsSandbox */,
 			);
 			productName = CardPhysicsApp;
 			productReference = 1D0736A52F37F6FE00C31614 /* CardPhysicsApp.app */;
@@ -598,10 +598,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		1D0736D0D8A729D01CC74C1A /* CardPhysicsKit */ = {
+		1D0736D0D8A729D01CC74C1A /* CardPhysicsSandbox */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 1D0736CF2F37F78E00C31614 /* XCLocalSwiftPackageReference "../CardPhysicsPackage" */;
-			productName = CardPhysicsKit;
+			productName = CardPhysicsSandbox;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
