@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import CardPhysicsKit
+import CardPhysicsSandbox
 
 struct ContentView: View {
     var body: some View {
