@@ -3,6 +3,8 @@
 ## Project Overview
 iOS sandbox app for developing and tuning realistic card animations and physics using RealityKit. All animation code is isolated from game logic for easy extraction into production card-game apps.
 
+**Role in the broader workspace:** CardPhysics is the live tuning playground. Stable engine code is extracted into the standalone `CardEngine` repo (https://github.com/john-Graham/CardEngine), which is consumed as a git submodule by `../Euchre/` and any future card games. Tune here → extract to CardEngine → bump submodule in Euchre. The sandbox UI for live parameter tuning stays in this repo and is not extracted.
+
 ## Directory Layout
 ```
 CardPhysics/
@@ -46,8 +48,8 @@ xcrun devicectl device process launch --device 00008150-0010281E2261401C johndgr
 - **Swift 6.3** with strict concurrency enabled by default in Swift 6 language mode
 - **iOS 26.4+** minimum deployment target (currently 26.4)
 - **SwiftUI + RealityKit** for all UI and 3D rendering
-- **Modular folder structure** in CardPhysicsKit: feature-based organization (Core, Configuration, Scene, Entities, Geometry, Rendering, Animations, Effects, UI, Storage) with 49 files across 10 top-level folders
-- **Swift extensions for code splitting**: Large classes split into focused extension files (CardPhysicsScene: 7 files, CardView: 4 files, ProceduralTextureGenerator: 4 files, CardPhysicsView: components/panels extracted)
+- **Modular folder structure** in CardPhysicsKit: feature-based organization (Core, Configuration, Scene, Entities, Geometry, Rendering, Animations, Effects, UI, Storage)
+- **Swift extensions for code splitting**: Large classes (CardPhysicsScene, CardView, ProceduralTextureGenerator, CardPhysicsView) are split across multiple extension files to keep each file focused
 - **`@Observable` PanelState**: Panel visibility state consolidated into a single `@Observable` class instead of scattered `@State` booleans
 - **Liquid Glass** design language for all floating panels and buttons (iOS 26 `.glassEffect`)
 - **GestureComponent** (iOS 26 RealityKit) for entity-level tap gestures (feature-flagged)
@@ -56,10 +58,10 @@ xcrun devicectl device process launch --device 00008150-0010281E2261401C johndgr
 - Landscape-only orientation, locked at app launch
 
 ## Architecture
-- `CardPhysicsKit` is the framework with all substance (49 files organized in modular folders): 3D scene management, physics simulation, procedural texture generation, card entities, curved mesh generation, animation triggers, and the interactive SwiftUI control panel
-- **Modular organization**: Feature-based folders (Scene/, Animations/, UI/, Rendering/) replace flat structure. Large files split: CardPhysicsView (1,797→328 lines), CardPhysicsScene (1,466→217 lines), CardView (757→133 lines), ProceduralTextureGenerator (438→57 lines)
-- **Extension-based splitting**: CardPhysicsScene methods distributed across 7 files via Swift extensions (Setup, Environment, Wear, Dealing, PickUp, InHands). CardView split into 4 files (FaceStyles, BackStyles, PipLayouts). ProceduralTextureGenerator split into 4 files by material type (Felt, Wood, CardWear)
-- **Panel state management**: `PanelState` `@Observable` class consolidates 10 panel visibility booleans (replaces scattered `@State` vars in CardPhysicsView)
+- `CardPhysicsKit` is the framework with all substance: 3D scene management, physics simulation, procedural texture generation, card entities, curved mesh generation, animation triggers, and the interactive SwiftUI control panel
+- **Modular organization**: feature-based folders (Scene/, Animations/, UI/, Rendering/, etc.)
+- **Extension-based splitting**: CardPhysicsScene methods distributed via Swift extensions (Setup, Environment, Wear, Dealing, PickUp, InHands). CardView split by face/back/pip layouts. ProceduralTextureGenerator split by material type (Felt, Wood, CardWear)
+- **Panel state management**: `PanelState` `@Observable` class consolidates panel visibility flags (replaces scattered `@State` vars in CardPhysicsView)
 - `CardPhysicsApp` is a thin shell: `@main` entry point, orientation lock, `ContentView` wrapping `CardPhysicsView`
 
 ## Open GitHub Issues (planned changes)
