@@ -13,10 +13,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        // CardEngine consumed via local path during development.
-        // After CardEngine v0.1.0 is tagged and pushed (Phase 9), this can be switched to:
-        //   .package(url: "https://github.com/john-Graham/CardEngine.git", .upToNextMinor(from: "0.1.0"))
-        .package(path: "../../../../../CardEngine")
+        .package(url: "git@github.com:john-Graham/CardEngine.git", from: "0.2.0")
     ],
     targets: [
         .target(

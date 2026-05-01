@@ -1,0 +1,15 @@
+{
+  "originHash" : "83ed28a849fe9ddee3f2e7e8144d51aab68e932e28c35653f99082d3037c3d9a",
+  "pins" : [
+    {
+      "identity" : "cardengine",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:john-Graham/CardEngine.git",
+      "state" : {
+        "revision" : "05be3e05ce8710254bca87d06f7a299dcc9e6a75",
+        "version" : "0.2.0"
+      }
+    }
+  ],
+  "version" : 3
+}
