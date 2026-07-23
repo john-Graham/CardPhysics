@@ -67,6 +67,27 @@ struct RoomThumbnail: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+        case .oakCardRoom:
+            // Warm oak paneling under a red pendant lamp.
+            return LinearGradient(
+                colors: [Color.orange.opacity(0.65), Color.red.opacity(0.35)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .modernLibrary:
+            // Bright residential library with wood shelving.
+            return LinearGradient(
+                colors: [Color.teal.opacity(0.5), Color.brown.opacity(0.35)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .huntingLodge:
+            // Dark traditional lodge card room.
+            return LinearGradient(
+                colors: [Color.brown.opacity(0.9), Color.black.opacity(0.45)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         case .woodCabin:
             return LinearGradient(
                 colors: [Color.brown.opacity(0.8), Color.brown.opacity(0.4)],
@@ -92,6 +113,12 @@ struct RoomThumbnail: View {
             return "building.2.fill"
         case .classicLibrary:
             return "books.vertical.fill"
+        case .oakCardRoom:
+            return "lamp.desk.fill"
+        case .modernLibrary:
+            return "book.fill"
+        case .huntingLodge:
+            return "tree.fill"
         case .woodCabin:
             return "house.fill"
         case .customImage:
