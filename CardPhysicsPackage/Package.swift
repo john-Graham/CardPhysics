@@ -13,7 +13,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "git@github.com:john-Graham/CardEngine.git", from: "0.2.0")
+        .package(url: "git@github.com:john-Graham/CardEngine.git", from: "0.5.0")
     ],
     targets: [
         .target(

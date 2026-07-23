@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:john-Graham/CardEngine.git",
       "state" : {
-        "revision" : "05be3e05ce8710254bca87d06f7a299dcc9e6a75",
-        "version" : "0.2.0"
+        "revision" : "2394c0350ac5d76839e4a4689f719ea0d7ea5ae6",
+        "version" : "0.5.0"
       }
     }
   ],

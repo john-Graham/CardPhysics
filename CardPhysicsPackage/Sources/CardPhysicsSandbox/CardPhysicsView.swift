@@ -153,6 +153,16 @@ public struct CardPhysicsView: View {
                                 Label("Tap to Flip", systemImage: settings.enableCardTapGesture ? "checkmark" : "")
                             }
 
+                            // Input-feel plan Step 4c soak: gates the flick
+                            // gesture (matrix variant D) on fan cards. Takes
+                            // effect at the next "Fan in Hands" — gestures
+                            // wire when the fan forms.
+                            Button(action: {
+                                settings.enableFlickToPlay.toggle()
+                            }) {
+                                Label("Flick to Play (fan)", systemImage: settings.enableFlickToPlay ? "checkmark" : "")
+                            }
+
                             Menu("Feature Flags") {
                                 Button(action: {
                                     settings.enableGravityFeature.toggle()
@@ -309,7 +319,29 @@ public struct CardPhysicsView: View {
             await coordinator.pickUpCardAction?(selectedCorner)
         case .fanInHands:
             await coordinator.fanInHandsAction?()
+            if settings.enableFlickToPlay {
+                await enableFlickSoak()
+            }
         }
+    }
+
+    /// Input-feel plan Step 4c soak harness. After fanning, mark every card
+    /// playable (fan cards get the tap+flick wiring via `enableTapToPlay`)
+    /// and route gestures to console prints; a flick plays the card to the
+    /// side-1 trick spot through the real `playCard` ballistic path so
+    /// strength→flight-time scaling is visible. Console filter: FLICKSOAK.
+    private func enableFlickSoak() async {
+        coordinator.cardTappedHandler = { card in
+            print("FLICKSOAK tap → \(card.displayName)")
+        }
+        coordinator.cardFlickedHandler = { [coordinator] card, strength in
+            print("FLICKSOAK flick strength=\(strength) → \(card.displayName)")
+            Task { await coordinator.playCardAction?(card, 1) }
+        }
+        let allCards = Suit.allCases.flatMap { suit in
+            Rank.allCases.map { Card(suit: suit, rank: $0) }
+        }
+        await coordinator.setPlayableCardsAction?(allCards)
     }
 
     private func applyCameraPreset(_ preset: CameraPreset) {
