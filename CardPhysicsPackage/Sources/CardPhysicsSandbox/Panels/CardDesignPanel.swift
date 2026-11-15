@@ -43,12 +43,12 @@ struct CardDesignPanel: View {
             )
         }
         .fullScreenCover(isPresented: $showingFaceCamera) {
-            CameraPicker { image in
+            SandboxCameraPicker { image in
                 handleImageCapture(image, purpose: "selfieFace", isFace: true)
             }
         }
         .fullScreenCover(isPresented: $showingBackCamera) {
-            CameraPicker { image in
+            SandboxCameraPicker { image in
                 handleImageCapture(image, purpose: "selfieBack", isFace: false)
             }
         }
