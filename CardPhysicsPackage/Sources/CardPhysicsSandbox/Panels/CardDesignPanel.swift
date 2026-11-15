@@ -95,7 +95,7 @@ struct CardDesignPanel: View {
 
             // Photo + Selfie buttons
             HStack(spacing: 8) {
-                CardPhotoPicker(purpose: "customFace") { image in
+                SandboxPhotoPicker(purpose: "customFace") { image in
                     handleImageCapture(image, purpose: "customFace", isFace: true)
                 }
                 .font(.caption2)
@@ -175,7 +175,7 @@ struct CardDesignPanel: View {
 
             // Photo + Selfie buttons
             HStack(spacing: 8) {
-                CardPhotoPicker(purpose: "customBack") { image in
+                SandboxPhotoPicker(purpose: "customBack") { image in
                     handleImageCapture(image, purpose: "customBack", isFace: false)
                 }
                 .font(.caption2)
